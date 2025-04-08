@@ -1,6 +1,6 @@
 # PGS-Compare
 
-PGS-Compare is a Python package for analyzing and comparing Polygenic Scores (PGS) across ancestry groups. It uses the PGS Catalog and 1000 Genomes data to help researchers evaluate the stability of PGS scores across different populations.
+PGS-Compare is a Python package for analyzing and comparing Polygenic Scores (PGS) across ancestry groups. It uses the PGS Catalog and 1000 Genomes data to help researchers evaluate the stability of PGS scores across different ancestry groups.
 
 ## Features
 
@@ -111,7 +111,7 @@ Returns:
 #### calculate
 
 ```python
-pgs.calculate(trait_id, include_child_pgs=True, max_variants=1500000,
+pgs.calculate(trait_id, include_child_pgs=True, max_variants=None,
               run_ancestry=False, reference_panel=None)
 ```
 

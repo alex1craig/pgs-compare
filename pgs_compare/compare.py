@@ -4,7 +4,6 @@ Main module for the PGS Compare package.
 
 import os
 import logging
-from pathlib import Path
 
 from pgs_compare.download import setup_environment
 from pgs_compare.calculate import run_pgs_calculation
@@ -89,7 +88,7 @@ class PGSCompare:
         self,
         trait_id,
         include_child_pgs=True,
-        max_variants=1500000,
+        max_variants=None,
         run_ancestry=False,
         reference_panel=None,
     ):
@@ -185,7 +184,7 @@ class PGSCompare:
         self,
         trait_id,
         include_child_pgs=True,
-        max_variants=1500000,
+        max_variants=None,
         run_ancestry=False,
         visualize=True,
     ):
