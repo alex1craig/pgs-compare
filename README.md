@@ -40,9 +40,8 @@ pip install git+https://github.com/yourusername/pgs-compare.git
 ```python
 from pgs_compare import PGSCompare
 
-# Initialize and set up environment
+# Initialize with automatic dependency checking and data downloading
 pgs = PGSCompare()
-pgs.setup(download_genomes=True, download_reference=True)
 
 # Run the full pipeline for a specific trait
 # Example: Parkinson's disease (MONDO_0005180)
@@ -59,9 +58,6 @@ results = pgs.run_pipeline("MONDO_0005180")
 PGS-Compare also provides a command-line interface:
 
 ```bash
-# Set up the environment
-pgs-compare setup
-
 # Run calculations for Parkinson's disease
 pgs-compare calculate MONDO_0005180
 
@@ -84,29 +80,15 @@ The main class for interacting with the package.
 ```python
 from pgs_compare import PGSCompare
 
-pgs = PGSCompare(data_dir=None, download_data=False)
+pgs = PGSCompare(data_dir=None, download_data=True)
 ```
 
 Parameters:
 - `data_dir` (str, optional): Directory to store data. Default is "data" in the current directory.
-- `download_data` (bool): Whether to download data during initialization.
+- `download_data` (bool): Whether to download missing data during initialization. Defaults to True.
+  If set to False, will still check for dependencies but won't download missing data.
 
 Methods:
-
-#### setup
-
-```python
-pgs.setup(download_genomes=True, download_reference=True)
-```
-
-Set up the environment for PGS comparisons.
-
-Parameters:
-- `download_genomes` (bool): Whether to download 1000 Genomes data.
-- `download_reference` (bool): Whether to download reference panels.
-
-Returns:
-- dict: Status of each setup step
 
 #### calculate
 

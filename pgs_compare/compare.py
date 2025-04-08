@@ -22,13 +22,13 @@ class PGSCompare:
     Main class for comparing PGS scores across ancestry groups.
     """
 
-    def __init__(self, data_dir=None, download_data=False):
+    def __init__(self, data_dir=None, download_data=True):
         """
         Initialize the PGSCompare class.
 
         Args:
             data_dir (str, optional): Directory to store data. Default is "data" in the current directory.
-            download_data (bool): Whether to download data during initialization.
+            download_data (bool): Whether to download missing data during initialization. Default is True.
         """
         self.data_dir = data_dir or os.path.join(os.getcwd(), "data")
         self.genomes_dir = os.path.join(self.data_dir, "1000_genomes")
@@ -44,45 +44,36 @@ class PGSCompare:
         ]:
             os.makedirs(directory, exist_ok=True)
 
-        # Set up environment if requested
-        if download_data:
-            self.setup()
-
-    def setup(self, download_genomes=True, download_reference=True):
-        """
-        Set up the environment for PGS comparisons.
-
-        Args:
-            download_genomes (bool): Whether to download 1000 Genomes data.
-            download_reference (bool): Whether to download reference panels.
-
-        Returns:
-            dict: Status of each setup step
-        """
-        logger.info("Setting up PGS Compare environment")
-
-        setup_results = setup_environment(
+        # Set up environment automatically
+        logger.info("Checking dependencies and data availability")
+        self.setup_results = setup_environment(
             data_dir=self.data_dir,
-            download_data=False,  # We'll handle downloading separately
+            download_data=download_data
         )
-
-        # Download 1000 Genomes data if requested
-        if download_genomes and setup_results["plink_installed"]:
-            from pgs_compare.download import download_1000_genomes
-
-            setup_results["1000_genomes_downloaded"] = download_1000_genomes(
-                data_dir=self.genomes_dir
-            )
-
-        # Download reference panels if requested
-        if download_reference:
-            from pgs_compare.download import download_reference_panels
-
-            setup_results["reference_panels_downloaded"] = download_reference_panels(
-                data_dir=self.reference_dir
-            )
-
-        return setup_results
+        
+        # Log setup results
+        if self.setup_results["plink_installed"]:
+            logger.info("PLINK2 is installed")
+        else:
+            logger.warning("PLINK2 is not installed or not in PATH")
+            
+        if self.setup_results["nextflow_installed"]:
+            logger.info("Nextflow is installed")
+        else:
+            logger.warning("Nextflow is not installed or not in PATH")
+            
+        if self.setup_results["pgsc_calc_installed"]:
+            logger.info("pgsc_calc is installed/updated")
+        
+        if self.setup_results["1000_genomes_downloaded"]:
+            logger.info("1000 Genomes data is available")
+        else:
+            logger.warning("1000 Genomes data is missing")
+            
+        if self.setup_results["reference_panels_downloaded"]:
+            logger.info("Reference panels are available")
+        else:
+            logger.warning("Reference panels are missing")
 
     def calculate(
         self,

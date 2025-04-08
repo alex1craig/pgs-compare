@@ -5,8 +5,6 @@ Module for downloading necessary data for PGS comparisons.
 import os
 import subprocess
 import logging
-import sys
-import platform
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -173,20 +171,39 @@ def setup_environment(data_dir=None, download_data=True):
         data_dir = os.path.join(os.getcwd(), "data")
 
     os.makedirs(data_dir, exist_ok=True)
+    genomes_dir = os.path.join(data_dir, "1000_genomes")
+    reference_dir = os.path.join(data_dir, "reference")
+    
+    # Create subdirectories
+    os.makedirs(genomes_dir, exist_ok=True)
+    os.makedirs(reference_dir, exist_ok=True)
 
     # Install pgsc_calc
     if results["nextflow_installed"]:
         results["pgsc_calc_installed"] = install_pgsc_calc()
 
-    # Download data if requested
+    # Check if 1000 Genomes data exists
+    panel_file = os.path.join(genomes_dir, "integrated_call_samples_v3.20130502.ALL.panel")
+    has_genomes_data = os.path.exists(panel_file)
+    
+    # Check if reference panels exist
+    reference_file = os.path.join(reference_dir, "pgsc_1000G_v1.tar.zst")
+    has_reference_data = os.path.exists(reference_file)
+    
+    # Download data if requested and not already present
     if download_data:
-        if results["plink_installed"]:
-            results["1000_genomes_downloaded"] = download_1000_genomes(
-                os.path.join(data_dir, "1000_genomes")
-            )
+        if not has_genomes_data and results["plink_installed"]:
+            results["1000_genomes_downloaded"] = download_1000_genomes(genomes_dir)
+        else:
+            results["1000_genomes_downloaded"] = has_genomes_data
+            if has_genomes_data:
+                logger.info("1000 Genomes data already exists, skipping download")
 
-        results["reference_panels_downloaded"] = download_reference_panels(
-            os.path.join(data_dir, "reference")
-        )
+        if not has_reference_data:
+            results["reference_panels_downloaded"] = download_reference_panels(reference_dir)
+        else:
+            results["reference_panels_downloaded"] = has_reference_data
+            if has_reference_data:
+                logger.info("Reference panels already exist, skipping download")
 
     return results

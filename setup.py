@@ -26,9 +26,9 @@ setup(
         "pandas",
         "numpy",
         "matplotlib",
-        "scipy",
         "requests",
         "zstandard",
+        "pgscatalog-utils",
     ],
     entry_points={
         "console_scripts": [

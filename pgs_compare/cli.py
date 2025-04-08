@@ -36,19 +36,6 @@ def setup_parser():
     # Sub-parsers for commands
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
-    # Setup command
-    setup_parser = subparsers.add_parser(
-        "setup", help="Set up the environment for PGS comparisons"
-    )
-    setup_parser.add_argument(
-        "--skip-genomes", action="store_true", help="Skip downloading 1000 Genomes data"
-    )
-    setup_parser.add_argument(
-        "--skip-reference",
-        action="store_true",
-        help="Skip downloading reference panels",
-    )
-
     # Calculate command
     calc_parser = subparsers.add_parser(
         "calculate", help="Run PGS calculations for a specific trait"
@@ -120,49 +107,44 @@ def setup_parser():
 def main():
     """
     Main entry point for the command-line interface.
+    
+    Returns:
+        int: Exit code (0 for success, non-zero for errors)
     """
+    # Set up logging
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    # Parse command-line arguments
     parser = setup_parser()
     args = parser.parse_args()
 
-    # Set up logging based on verbosity
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(
-        level=log_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
+    # Display help if no command is specified
     if args.command is None:
         parser.print_help()
-        return 1
+        return 0
+
+    # Set logging level
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     # Initialize PGSCompare
-    pgs_compare = PGSCompare(data_dir=args.data_dir)
-
+    pgs_compare = PGSCompare(
+        data_dir=args.data_dir or os.path.join(os.getcwd(), "data")
+    )
+    
     # Override results_dir if provided
     if hasattr(args, "results_dir") and args.results_dir:
         pgs_compare.results_dir = args.results_dir
+    
+    # Check if required dependencies are available
+    if not pgs_compare.setup_results["plink_installed"] or not pgs_compare.setup_results["nextflow_installed"]:
+        logger.error("Some required dependencies are missing. Please install them and try again.")
+        return 1
 
     # Execute the requested command
-    if args.command == "setup":
-        result = pgs_compare.setup(
-            download_genomes=not args.skip_genomes,
-            download_reference=not args.skip_reference,
-        )
-
-        # Print status of each setup step
-        for step, status in result.items():
-            logger.info(f"{step}: {'Success' if status else 'Failed'}")
-
-        if not all(
-            [
-                result["plink_installed"],
-                result["nextflow_installed"],
-                result["pgsc_calc_installed"],
-            ]
-        ):
-            logger.error("Setup failed: Some required dependencies are missing")
-            return 1
-
-    elif args.command == "calculate":
+    if args.command == "calculate":
         result = pgs_compare.calculate(
             trait_id=args.trait_id,
             include_child_pgs=not args.exclude_child_pgs,
