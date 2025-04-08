@@ -10,6 +10,7 @@ import json
 import pandas as pd
 import shutil
 from pathlib import Path
+from pgscatalog.core.lib.catalogapi import CatalogQuery
 
 logger = logging.getLogger(__name__)
 
@@ -52,26 +53,52 @@ def fetch_pgs_ids(trait_id, include_child_pgs=True, max_variants=None):
     trait_label = trait_response.get("label", "")
 
     # Filter by variant count if max_variants is specified
-    if max_variants is not None:
-        filtered_pgs_ids = []
-        for pgs_id in pgs_ids:
-            try:
-                score_response = requests.get(
-                    f"https://www.pgscatalog.org/rest/score/{pgs_id}"
-                ).json()
-                variant_count = score_response.get("variants_number", 0)
-
+    if max_variants is not None and pgs_ids:
+        try:
+            # Use CatalogQuery to fetch all PGS information in a single request
+            catalog_query = CatalogQuery(accession=pgs_ids)
+            url = catalog_query.get_query_url()[0]
+            response = requests.get(url)
+            response.raise_for_status()
+            pgs_data = response.json()
+            
+            # Filter PGS IDs based on variant count
+            filtered_pgs_ids = []
+            for score_info in pgs_data.get("results", []):
+                pgs_id = score_info.get("id")
+                variant_count = score_info.get("variants_number", 0)
+                
                 if variant_count <= max_variants:
                     filtered_pgs_ids.append(pgs_id)
                 else:
                     logger.info(
                         f"Skipping {pgs_id} due to high variant count: {variant_count} > {max_variants}"
                     )
-            except requests.RequestException as e:
-                logger.warning(f"Error fetching data for {pgs_id}: {e}")
-                continue
+            
+            pgs_ids = filtered_pgs_ids
+            
+        except (requests.RequestException, KeyError) as e:
+            logger.warning(f"Error fetching batch PGS data: {e}")
+            # Fall back to individual requests if batch request fails
+            filtered_pgs_ids = []
+            for pgs_id in pgs_ids:
+                try:
+                    score_response = requests.get(
+                        f"https://www.pgscatalog.org/rest/score/{pgs_id}"
+                    ).json()
+                    variant_count = score_response.get("variants_number", 0)
 
-        pgs_ids = filtered_pgs_ids
+                    if variant_count <= max_variants:
+                        filtered_pgs_ids.append(pgs_id)
+                    else:
+                        logger.info(
+                            f"Skipping {pgs_id} due to high variant count: {variant_count} > {max_variants}"
+                        )
+                except requests.RequestException as e:
+                    logger.warning(f"Error fetching data for {pgs_id}: {e}")
+                    continue
+
+            pgs_ids = filtered_pgs_ids
 
     logger.info(f"Found {len(pgs_ids)} PGS IDs for trait {trait_id} ({trait_label})")
     return pgs_ids, trait_label, trait_response
