@@ -142,7 +142,7 @@ Returns:
 #### run_pipeline
 
 ```python
-pgs.run_pipeline(trait_id, include_child_pgs=True, max_variants=1500000,
+pgs.run_pipeline(trait_id, include_child_pgs=True, max_variants=None,
                 run_ancestry=False, visualize=True)
 ```
 

@@ -149,7 +149,7 @@ def run_pgs_calculation(
     data_dir=None,
     output_dir=None,
     include_child_pgs=True,
-    max_variants=1500000,
+    max_variants=None,
     run_ancestry=False,
     reference_panel=None,
 ):
