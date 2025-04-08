@@ -29,6 +29,7 @@ setup(
         "requests",
         "zstandard",
         "pgscatalog-utils",
+        "scipy",
     ],
     entry_points={
         "console_scripts": [

@@ -30,11 +30,19 @@ class PGSCompare:
             data_dir (str, optional): Directory to store data. Default is "data" in the current directory.
             download_data (bool): Whether to download missing data during initialization. Default is True.
         """
-        self.data_dir = data_dir or os.path.join(os.getcwd(), "data")
+        # Ensure data_dir is an absolute path if provided
+        if data_dir:
+            self.data_dir = os.path.abspath(data_dir)
+        else:
+            self.data_dir = os.path.join(os.getcwd(), "data")
+            
         self.genomes_dir = os.path.join(self.data_dir, "1000_genomes")
         self.reference_dir = os.path.join(self.data_dir, "reference")
         self.results_dir = os.path.join(os.getcwd(), "results")
 
+        # Ensure results_dir is an absolute path
+        self.results_dir = os.path.abspath(self.results_dir)
+        
         # Create directories
         for directory in [
             self.data_dir,

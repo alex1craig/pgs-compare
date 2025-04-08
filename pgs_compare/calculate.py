@@ -61,22 +61,22 @@ def fetch_pgs_ids(trait_id, include_child_pgs=True, max_variants=None):
             response = requests.get(url)
             response.raise_for_status()
             pgs_data = response.json()
-            
+
             # Filter PGS IDs based on variant count
             filtered_pgs_ids = []
             for score_info in pgs_data.get("results", []):
                 pgs_id = score_info.get("id")
                 variant_count = score_info.get("variants_number", 0)
-                
+
                 if variant_count <= max_variants:
                     filtered_pgs_ids.append(pgs_id)
                 else:
                     logger.info(
                         f"Skipping {pgs_id} due to high variant count: {variant_count} > {max_variants}"
                     )
-            
+
             pgs_ids = filtered_pgs_ids
-            
+
         except (requests.RequestException, KeyError) as e:
             logger.warning(f"Error fetching batch PGS data: {e}")
             # Fall back to individual requests if batch request fails
@@ -124,13 +124,18 @@ def create_samplesheet(data_dir, chromosomes=None, output_dir=None):
 
     os.makedirs(output_dir, exist_ok=True)
 
+    # Ensure data_dir is an absolute path
+    data_dir = os.path.abspath(data_dir)
+
     # Create DataFrame for samplesheet
     samplesheet_data = []
     for chromosome in chromosomes:
+        chr_path = os.path.join(data_dir, f"chr_{chromosome}")
+        logger.info(f"Setting path for chromosome {chromosome}: {chr_path}")
         samplesheet_data.append(
             {
                 "sampleset": "ALL",
-                "path_prefix": os.path.join(data_dir, f"chr_{chromosome}"),
+                "path_prefix": chr_path,
                 "chrom": chromosome,
                 "format": "pfile",
             }
@@ -177,8 +182,16 @@ def run_pgs_calculation(
     if data_dir is None:
         data_dir = os.path.join(os.getcwd(), "data", "1000_genomes")
 
+    # Ensure data_dir is an absolute path
+    data_dir = os.path.abspath(data_dir)
+    logger.info(f"Using 1000 Genomes data directory: {data_dir}")
+
     if output_dir is None:
         output_dir = os.path.join(os.getcwd(), "results")
+
+    # Ensure output_dir is an absolute path
+    output_dir = os.path.abspath(output_dir)
+    logger.info(f"Using output directory: {output_dir}")
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -198,7 +211,7 @@ def run_pgs_calculation(
 
     # Create samplesheet
     samplesheet_path = create_samplesheet(
-        data_dir, output_dir=os.path.join(output_dir, trait_id, "input")
+        data_dir, output_dir=os.path.join(output_dir, "input")
     )
 
     # Prepare Nextflow command
@@ -239,36 +252,23 @@ def run_pgs_calculation(
         process = subprocess.run(
             cmd,
             check=True,
-            cwd=(
-                os.path.join(output_dir, trait_id)
-                if os.path.exists(os.path.join(output_dir, trait_id))
-                else output_dir
-            ),
+            cwd=output_dir,
         )
 
         # Copy the results to a more accessible location
-        result_dir = os.path.join(output_dir, trait_id, "results")
+        result_dir = os.path.join(output_dir, "results")
         os.makedirs(result_dir, exist_ok=True)
 
-        # Determine source path based on where nextflow put the results
-        # If in output_dir/ALL/score
-        all_score_dir = os.path.join(output_dir, trait_id, "ALL", "score")
-        results_score_dir = os.path.join(output_dir, trait_id, "results", "score")
+        # Copy score results
+        score_path = os.path.join(output_dir, "results", "ALL", "score")
+        results_score_dir = os.path.join(result_dir, "score")
 
-        if os.path.exists(all_score_dir):
-            # Copy from ALL/score to results/score
+        if os.path.exists(score_path):
             if os.path.exists(results_score_dir):
                 shutil.rmtree(results_score_dir)
-            shutil.copytree(all_score_dir, results_score_dir)
+            shutil.copytree(score_path, results_score_dir)
         else:
-            # Check for results in output_dir/results/score
-            source_score_dir = os.path.join(output_dir, "results", "score")
-            if os.path.exists(source_score_dir):
-                if os.path.exists(results_score_dir):
-                    shutil.rmtree(results_score_dir)
-                shutil.copytree(source_score_dir, results_score_dir)
-            else:
-                logger.warning(f"Could not find score results to copy")
+            logger.warning(f"Could not find score results at {score_path}")
 
         # Save trait information
         trait_info_path = os.path.join(result_dir, f"{trait_id}_info.json")

@@ -8,6 +8,7 @@ import json
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import stats
 
 logger = logging.getLogger(__name__)
 

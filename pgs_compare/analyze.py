@@ -323,30 +323,11 @@ def analyze_scores(trait_id=None, scores_file=None, data_dir=None, output_dir=No
     # Determine scores file path if not provided
     if scores_file is None:
         if trait_id is not None:
-            # Check in the trait-specific results directory
-            scores_file = os.path.join(
-                os.getcwd(),
-                "results",
-                trait_id,
-                "results",
-                "score",
-                "aggregated_scores.txt.gz",
-            )
-            if not os.path.exists(scores_file):
-                # Try alternative location
-                scores_file = os.path.join(
-                    os.getcwd(),
-                    "results",
-                    trait_id,
-                    "ALL",
-                    "score",
-                    "aggregated_scores.txt.gz",
-                )
-
-        if scores_file is None or not os.path.exists(scores_file):
+            scores_file = os.path.join(os.getcwd(), "results", trait_id, "results", "ALL", "score", "aggregated_scores.txt.gz")
+            
+        if not os.path.exists(scores_file):
             logger.error("Could not find scores file")
             return {"success": False, "error": "Scores file not found"}
-
     # Load ancestry data
     ancestry_df = load_ancestry_data(data_dir)
 
