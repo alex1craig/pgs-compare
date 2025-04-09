@@ -78,8 +78,8 @@ def plot_distribution_by_ancestry(scores_df, pgs_id, output_dir=None, trait_name
     """
     plt.figure(figsize=(10, 6))
 
-    # Get unique ancestry groups
-    ancestry_groups = list(scores_df["GROUP"].unique()) + ["ALL"]
+    # Get unique ancestry groups and sort alphabetically
+    ancestry_groups = sorted(list(scores_df["GROUP"].unique()) + ["ALL"])
 
     # Plot distribution for each ancestry group
     for group in ancestry_groups:
@@ -185,8 +185,8 @@ def plot_standardized_distribution_by_ancestry(
     """
     plt.figure(figsize=(12, 6))
 
-    # Get unique ancestry groups
-    ancestry_groups = list(scores_df["GROUP"].unique()) + ["ALL"]
+    # Get unique ancestry groups and sort alphabetically
+    ancestry_groups = sorted(list(scores_df["GROUP"].unique()) + ["ALL"])
 
     # Plot distribution for each ancestry group
     for group in ancestry_groups:
@@ -381,7 +381,10 @@ def plot_deviations(deviations, ancestry_groups, output_dir=None, trait_name=Non
     x = np.arange(len(pgs_ids))
     width = 0.8 / len(ancestry_groups)
 
-    for i, group in enumerate(ancestry_groups):
+    # Sort ancestry groups alphabetically
+    sorted_ancestry_groups = sorted(ancestry_groups)
+
+    for i, group in enumerate(sorted_ancestry_groups):
         means = [
             (
                 deviations[pgs_id][group]["mean_deviation"]
@@ -391,7 +394,7 @@ def plot_deviations(deviations, ancestry_groups, output_dir=None, trait_name=Non
             for pgs_id in pgs_ids
         ]
         plt.bar(
-            x + i * width - (len(ancestry_groups) - 1) * width / 2,
+            x + i * width - (len(sorted_ancestry_groups) - 1) * width / 2,
             means,
             width,
             label=group,
@@ -461,10 +464,8 @@ def plot_average_deviations_by_ancestry(
         else:
             average_deviations[group] = 0
 
-    # Sort groups by average deviation for better visualization
-    sorted_groups = sorted(
-        average_deviations.keys(), key=lambda g: average_deviations[g], reverse=True
-    )
+    # Sort groups alphabetically
+    sorted_groups = sorted(average_deviations.keys())
 
     # Create bar plot
     plt.bar(sorted_groups, [average_deviations[group] for group in sorted_groups])
