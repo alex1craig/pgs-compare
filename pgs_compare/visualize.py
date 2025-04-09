@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -517,8 +518,10 @@ def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None
             response = requests.get(
                 f"https://www.pgscatalog.org/rest/trait/{trait_id}"
             ).json()
-            trait_name = response.get("label")
+            trait_name = response["label"]
+            trait_name = " ".join(word.capitalize() for word in trait_name.split())
         except:
+            logger.warning(f"Could not find trait name for {trait_id}")
             pass
 
     # Generate plots
