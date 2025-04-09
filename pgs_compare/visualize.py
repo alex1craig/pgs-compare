@@ -329,10 +329,13 @@ def plot_average_correlations(average_correlations, output_dir=None, trait_name=
     """
     plt.figure(figsize=(10, 6))
 
+    # Sort ancestry groups alphabetically
+    sorted_groups = sorted(average_correlations.keys())
+
     # Plot average correlations
     plt.bar(
-        list(average_correlations.keys()),
-        [float(val) for val in average_correlations.values()],
+        sorted_groups,
+        [float(average_correlations[group]) for group in sorted_groups],
     )
 
     # Set up plot
