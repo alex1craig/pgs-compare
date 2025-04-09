@@ -84,6 +84,9 @@ def setup_parser():
         "trait_id", help="Trait ID (e.g., MONDO_0005180 for Parkinson's disease)"
     )
     pipeline_parser.add_argument(
+        "--data-dir", help="Directory for data storage (default: ./data)"
+    )
+    pipeline_parser.add_argument(
         "--exclude-child-pgs",
         action="store_true",
         help="Exclude child-associated PGS IDs",
@@ -107,13 +110,14 @@ def setup_parser():
 def main():
     """
     Main entry point for the command-line interface.
-    
+
     Returns:
         int: Exit code (0 for success, non-zero for errors)
     """
     # Set up logging
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     # Parse command-line arguments
@@ -133,14 +137,19 @@ def main():
     pgs_compare = PGSCompare(
         data_dir=args.data_dir or os.path.join(os.getcwd(), "data")
     )
-    
+
     # Override results_dir if provided
     if hasattr(args, "results_dir") and args.results_dir:
         pgs_compare.results_dir = args.results_dir
-    
+
     # Check if required dependencies are available
-    if not pgs_compare.setup_results["plink_installed"] or not pgs_compare.setup_results["nextflow_installed"]:
-        logger.error("Some required dependencies are missing. Please install them and try again.")
+    if (
+        not pgs_compare.setup_results["plink_installed"]
+        or not pgs_compare.setup_results["nextflow_installed"]
+    ):
+        logger.error(
+            "Some required dependencies are missing. Please install them and try again."
+        )
         return 1
 
     # Execute the requested command
