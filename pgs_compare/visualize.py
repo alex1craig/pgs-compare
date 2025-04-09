@@ -427,6 +427,77 @@ def plot_deviations(deviations, ancestry_groups, output_dir=None, trait_name=Non
         return None
 
 
+def plot_average_deviations_by_ancestry(
+    deviations, ancestry_groups, output_dir=None, trait_name=None
+):
+    """
+    Plot average absolute z-score deviation across all PGS scores for each ancestry group.
+
+    Args:
+        deviations (dict): Dictionary with deviation information
+        ancestry_groups (list): List of ancestry groups
+        output_dir (str, optional): Directory to save the plot
+        trait_name (str, optional): Trait name to add to title
+
+    Returns:
+        str or None: Path to the saved plot, or None if no plot was created
+    """
+    plt.figure(figsize=(10, 6))
+
+    # Calculate the average absolute deviation across all PGS studies for each ancestry group
+    average_deviations = {}
+
+    for group in ancestry_groups:
+        group_deviations = []
+        for pgs_id in deviations:
+            if group in deviations[pgs_id]:
+                # Use absolute value of the mean deviation
+                group_deviations.append(
+                    abs(deviations[pgs_id][group]["mean_deviation"])
+                )
+
+        if group_deviations:
+            average_deviations[group] = sum(group_deviations) / len(group_deviations)
+        else:
+            average_deviations[group] = 0
+
+    # Sort groups by average deviation for better visualization
+    sorted_groups = sorted(
+        average_deviations.keys(), key=lambda g: average_deviations[g], reverse=True
+    )
+
+    # Create bar plot
+    plt.bar(sorted_groups, [average_deviations[group] for group in sorted_groups])
+
+    # Set up plot
+    plt.xlabel("Ancestry Group")
+    plt.ylabel("Average Absolute Z-Score Deviation")
+
+    title = "Average Absolute Z-Score Deviation by Ancestry Group"
+    if trait_name:
+        title += f" ({trait_name})"
+
+    plt.title(title)
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+
+    # Save plot
+    if output_dir:
+        os.makedirs(os.path.join(output_dir, "deviations"), exist_ok=True)
+        plot_path = os.path.join(
+            output_dir,
+            "deviations",
+            "average_absolute_z_score_deviations_by_ancestry.png",
+        )
+        plt.savefig(plot_path)
+        plt.close()
+        return plot_path
+    else:
+        plt.show()
+        plt.close()
+        return None
+
+
 def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None):
     """
     Visualize PGS analysis results.
@@ -564,6 +635,11 @@ def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None
 
     # 3. Deviation plots
     plots["deviations"] = plot_deviations(
+        analysis_results["deviations"], ancestry_groups, output_dir, trait_name
+    )
+
+    # 4. Average deviation by ancestry plot
+    plots["average_deviations_by_ancestry"] = plot_average_deviations_by_ancestry(
         analysis_results["deviations"], ancestry_groups, output_dir, trait_name
     )
 
