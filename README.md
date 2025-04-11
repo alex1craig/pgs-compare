@@ -174,14 +174,25 @@ The analysis results include:
 
 1. **Summary Statistics**: Basic statistics of PGS scores by ancestry group and PGS study
 2. **Correlations**: Correlation matrices showing how different PGS studies relate to each other
-3. **Deviations**: Analysis of how each PGS study deviates from the average across ancestry groups
+3. **Variance**: Measurement of how consistently different PGS studies rank individuals within each ancestry group
 
 Visualizations include:
 
 1. Distribution plots by ancestry group for each PGS
 2. Standardized score distributions (z-scores)
 3. Correlation heatmaps
-4. Deviation plots showing the stability of PGS scores across ancestry groups
+4. Variance plots showing the stability of PGS predictions across ancestry groups
+
+### Variance Metric
+
+The variance metric quantifies the stability of PGS predictions across different studies:
+
+- For each individual, we calculate the variance of their z-scores across all PGS studies
+- These individual variances are then averaged within each ancestry group
+- Lower variance indicates more stable predictions (i.e., different PGS models consistently rank individuals similarly)
+- Higher variance suggests less consistency across different PGS models
+
+This metric is particularly useful for comparing prediction stability between European and non-European ancestry groups, as PGS studies typically show higher variance in non-European populations due to training bias.
 
 ## Citing PGS-Compare
 

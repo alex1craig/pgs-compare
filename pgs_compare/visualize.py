@@ -365,119 +365,50 @@ def plot_average_correlations(average_correlations, output_dir=None, trait_name=
         return None
 
 
-def plot_deviations(deviations, ancestry_groups, output_dir=None, trait_name=None):
+def plot_variance_by_ancestry(variance_results, output_dir=None, trait_name=None):
     """
-    Plot mean deviations for each PGS study by ancestry group.
+    Plot average variance of z-scores across PGS studies for each ancestry group.
+
+    Lower variance indicates more stable predictions across different PGS models.
 
     Args:
-        deviations (dict): Dictionary with deviation information
-        ancestry_groups (list): List of ancestry groups
+        variance_results (dict): Dictionary with variance information by ancestry group
         output_dir (str, optional): Directory to save the plot
         trait_name (str, optional): Trait name to add to title
 
     Returns:
         str or None: Path to the saved plot, or None if no plot was created
     """
-    plt.figure(figsize=(12, 8))
-
-    pgs_ids = list(deviations.keys())
-    x = np.arange(len(pgs_ids))
-    width = 0.8 / len(ancestry_groups)
-
-    # Sort ancestry groups alphabetically
-    sorted_ancestry_groups = sorted(ancestry_groups)
-
-    for i, group in enumerate(sorted_ancestry_groups):
-        means = [
-            (
-                deviations[pgs_id][group]["mean_deviation"]
-                if group in deviations[pgs_id]
-                else 0
-            )
-            for pgs_id in pgs_ids
-        ]
-        plt.bar(
-            x + i * width - (len(sorted_ancestry_groups) - 1) * width / 2,
-            means,
-            width,
-            label=group,
-        )
-
-    # Set up plot
-    plt.xlabel("PGS Study")
-    plt.ylabel("Mean Deviation from Average Z-Score")
-
-    title = "Mean Deviation of PGS Z-Scores from Average"
-    if trait_name:
-        title += f" ({trait_name})"
-
-    plt.title(title)
-    plt.xticks(x, pgs_ids, rotation=45, ha="right")
-    plt.legend()
-    plt.axhline(y=0, color="black", linestyle="-", alpha=0.3)
-    plt.grid(axis="y", alpha=0.3)
-    plt.tight_layout()
-
-    # Save plot
-    if output_dir:
-        os.makedirs(os.path.join(output_dir, "deviations"), exist_ok=True)
-        plot_path = os.path.join(
-            output_dir, "deviations", "mean_z_score_deviations_from_average.png"
-        )
-        plt.savefig(plot_path)
-        plt.close()
-        return plot_path
-    else:
-        plt.show()
-        plt.close()
-        return None
-
-
-def plot_average_deviations_by_ancestry(
-    deviations, ancestry_groups, output_dir=None, trait_name=None
-):
-    """
-    Plot average absolute z-score deviation across all PGS scores for each ancestry group.
-
-    Args:
-        deviations (dict): Dictionary with deviation information
-        ancestry_groups (list): List of ancestry groups
-        output_dir (str, optional): Directory to save the plot
-        trait_name (str, optional): Trait name to add to title
-
-    Returns:
-        str or None: Path to the saved plot, or None if no plot was created
-    """
-    plt.figure(figsize=(10, 6))
-
-    # Calculate the average absolute deviation across all PGS studies for each ancestry group
-    average_deviations = {}
-
-    for group in ancestry_groups:
-        group_deviations = []
-        for pgs_id in deviations:
-            if group in deviations[pgs_id]:
-                # Use absolute value of the mean deviation
-                group_deviations.append(
-                    abs(deviations[pgs_id][group]["mean_deviation"])
-                )
-
-        if group_deviations:
-            average_deviations[group] = sum(group_deviations) / len(group_deviations)
-        else:
-            average_deviations[group] = 0
+    plt.figure(figsize=(12, 7))
 
     # Sort groups alphabetically
-    sorted_groups = sorted(average_deviations.keys())
+    sorted_groups = sorted(variance_results.keys())
 
-    # Create bar plot
-    plt.bar(sorted_groups, [average_deviations[group] for group in sorted_groups])
+    # Extract average variance for each group
+    avg_variances = [
+        variance_results[group]["average_variance"] for group in sorted_groups
+    ]
+
+    # Create bar plot with error bars
+    std_variances = [variance_results[group]["std_variance"] for group in sorted_groups]
+    plt.bar(sorted_groups, avg_variances)
+
+    # Add error bars showing standard deviation of individual variances
+    plt.errorbar(
+        sorted_groups,
+        avg_variances,
+        yerr=std_variances,
+        fmt="none",
+        capsize=5,
+        color="black",
+        alpha=0.5,
+    )
 
     # Set up plot
     plt.xlabel("Ancestry Group")
-    plt.ylabel("Average Absolute Z-Score Deviation")
+    plt.ylabel("Average Variance of Z-Scores")
 
-    title = "Average Absolute Z-Score Deviation by Ancestry Group"
+    title = "Average Variance of Z-Scores Across PGS Studies by Ancestry Group"
     if trait_name:
         title += f" ({trait_name})"
 
@@ -485,13 +416,21 @@ def plot_average_deviations_by_ancestry(
     plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
 
+    # Add descriptive annotation
+    plt.annotate(
+        "Lower variance indicates more stable predictions across PGS models",
+        xy=(0.5, 0.01),
+        xycoords="figure fraction",
+        ha="center",
+        fontsize=10,
+        alpha=0.7,
+    )
+
     # Save plot
     if output_dir:
-        os.makedirs(os.path.join(output_dir, "deviations"), exist_ok=True)
+        os.makedirs(os.path.join(output_dir, "variance"), exist_ok=True)
         plot_path = os.path.join(
-            output_dir,
-            "deviations",
-            "average_absolute_z_score_deviations_by_ancestry.png",
+            output_dir, "variance", "average_z_score_variance_by_ancestry.png"
         )
         plt.savefig(plot_path)
         plt.close()
@@ -538,9 +477,9 @@ def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None
             ) as f:
                 average_correlations = json.load(f)
 
-            # Load deviations
-            with open(os.path.join(analysis_dir, "deviations.json"), "r") as f:
-                deviations = json.load(f)
+            # Load variance (previously deviations)
+            with open(os.path.join(analysis_dir, "variance.json"), "r") as f:
+                variance = json.load(f)
 
             # Load standardized scores
             standardized_scores = pd.read_csv(
@@ -551,7 +490,7 @@ def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None
                 "summary_statistics": summary_statistics,
                 "correlations": correlations,
                 "average_correlations": average_correlations,
-                "deviations": deviations,
+                "variance": variance,
                 "trait_id": (
                     os.path.basename(os.path.dirname(analysis_dir))
                     if os.path.dirname(analysis_dir)
@@ -637,14 +576,9 @@ def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None
         analysis_results["average_correlations"], output_dir, trait_name
     )
 
-    # 3. Deviation plots
-    plots["deviations"] = plot_deviations(
-        analysis_results["deviations"], ancestry_groups, output_dir, trait_name
-    )
-
-    # 4. Average deviation by ancestry plot
-    plots["average_deviations_by_ancestry"] = plot_average_deviations_by_ancestry(
-        analysis_results["deviations"], ancestry_groups, output_dir, trait_name
+    # 3. Variance plot
+    plots["variance_by_ancestry"] = plot_variance_by_ancestry(
+        analysis_results["variance"], output_dir, trait_name
     )
 
     return {"success": True, "plots": plots}
