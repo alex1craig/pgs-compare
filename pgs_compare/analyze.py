@@ -206,12 +206,31 @@ def calculate_correlations(scores_df):
 
             # Calculate mean of all correlations (excluding self-correlations on diagonal)
             mask = ~np.eye(corr_matrix.shape[0], dtype=bool)
-            average_correlations[group] = float(corr_matrix.values[mask].mean())
+            corr_values = corr_matrix.values[mask]
+
+            # Calculate average correlation and standard deviation
+            avg_correlation = float(corr_values.mean())
+            std_correlation = float(corr_values.std())
+
+            # Store average and standard deviation
+            average_correlations[group] = {
+                "mean": avg_correlation,
+                "std": std_correlation,
+                "min": float(corr_values.min()),
+                "max": float(corr_values.max()),
+                "count": len(corr_values),
+            }
 
         except Exception as e:
             logger.warning(f"Error calculating correlations for group {group}: {e}")
             correlations[group] = {}
-            average_correlations[group] = None
+            average_correlations[group] = {
+                "mean": None,
+                "std": None,
+                "min": None,
+                "max": None,
+                "count": 0,
+            }
 
     logger.info(f"Calculated correlations for {len(correlations)} ancestry groups")
     return {"correlations": correlations, "average_correlations": average_correlations}

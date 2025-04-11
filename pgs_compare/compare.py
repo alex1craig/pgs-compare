@@ -35,14 +35,14 @@ class PGSCompare:
             self.data_dir = os.path.abspath(data_dir)
         else:
             self.data_dir = os.path.join(os.getcwd(), "data")
-            
+
         self.genomes_dir = os.path.join(self.data_dir, "1000_genomes")
         self.reference_dir = os.path.join(self.data_dir, "reference")
         self.results_dir = os.path.join(os.getcwd(), "results")
 
         # Ensure results_dir is an absolute path
         self.results_dir = os.path.abspath(self.results_dir)
-        
+
         # Create directories
         for directory in [
             self.data_dir,
@@ -55,29 +55,28 @@ class PGSCompare:
         # Set up environment automatically
         logger.info("Checking dependencies and data availability")
         self.setup_results = setup_environment(
-            data_dir=self.data_dir,
-            download_data=download_data
+            data_dir=self.data_dir, download_data=download_data
         )
-        
+
         # Log setup results
         if self.setup_results["plink_installed"]:
             logger.info("PLINK2 is installed")
         else:
             logger.warning("PLINK2 is not installed or not in PATH")
-            
+
         if self.setup_results["nextflow_installed"]:
             logger.info("Nextflow is installed")
         else:
             logger.warning("Nextflow is not installed or not in PATH")
-            
+
         if self.setup_results["pgsc_calc_installed"]:
             logger.info("pgsc_calc is installed/updated")
-        
+
         if self.setup_results["1000_genomes_downloaded"]:
             logger.info("1000 Genomes data is available")
         else:
             logger.warning("1000 Genomes data is missing")
-            
+
         if self.setup_results["reference_panels_downloaded"]:
             logger.info("Reference panels are available")
         else:
@@ -153,7 +152,7 @@ class PGSCompare:
             output_dir=output_dir,
         )
 
-    def visualize(self, trait_id=None, analysis_results=None):
+    def visualize(self, trait_id=None, analysis_results=None, show_error_bars=False):
         """
         Visualize PGS analysis results.
 
@@ -161,6 +160,7 @@ class PGSCompare:
             trait_id (str, optional): Trait ID. Used for organizing output if provided.
             analysis_results (dict, optional): Analysis results from analyze().
                 If None, will try to load from the standard location based on trait_id.
+            show_error_bars (bool): Whether to show error bars for all plots. Default is False.
 
         Returns:
             dict: Dictionary with paths to the generated plots
@@ -177,6 +177,7 @@ class PGSCompare:
             analysis_results=analysis_results,
             analysis_dir=analysis_dir,
             output_dir=output_dir,
+            show_error_bars=show_error_bars,
         )
 
     def run_pipeline(
@@ -186,6 +187,7 @@ class PGSCompare:
         max_variants=None,
         run_ancestry=False,
         visualize=True,
+        show_error_bars=False,
     ):
         """
         Run the full pipeline (calculate, analyze, visualize) for a specific trait.
@@ -196,6 +198,7 @@ class PGSCompare:
             max_variants (int, optional): Maximum number of variants to include in PGS
             run_ancestry (bool): Whether to run ancestry analysis
             visualize (bool): Whether to generate visualization plots
+            show_error_bars (bool): Whether to show error bars for all plots. Default is False.
 
         Returns:
             dict: Pipeline results
@@ -231,7 +234,9 @@ class PGSCompare:
         # Run visualization if requested
         if visualize:
             viz_results = self.visualize(
-                trait_id=trait_id, analysis_results=analysis_results
+                trait_id=trait_id,
+                analysis_results=analysis_results,
+                show_error_bars=show_error_bars,
             )
 
             return {

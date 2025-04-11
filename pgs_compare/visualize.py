@@ -315,28 +315,44 @@ def plot_correlation_matrix(scores_df, group, output_dir=None, trait_name=None):
         return None
 
 
-def plot_average_correlations(average_correlations, output_dir=None, trait_name=None):
+def plot_average_correlations(
+    average_correlations, output_dir=None, trait_name=None, show_error_bars=False
+):
     """
-    Plot average correlations across ancestry groups.
+    Plot average correlations across ancestry groups with optional error bars.
 
     Args:
         average_correlations (dict): Dictionary with average correlations by ancestry group
         output_dir (str, optional): Directory to save the plot
         trait_name (str, optional): Trait name to add to title
+        show_error_bars (bool): Whether to show error bars. Default is False.
 
     Returns:
         str or None: Path to the saved plot, or None if no plot was created
     """
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 7))
 
     # Sort ancestry groups alphabetically
     sorted_groups = sorted(average_correlations.keys())
 
-    # Plot average correlations
-    plt.bar(
-        sorted_groups,
-        [float(average_correlations[group]) for group in sorted_groups],
-    )
+    # Extract mean and std for each group
+    means = [average_correlations[group]["mean"] for group in sorted_groups]
+    stds = [average_correlations[group]["std"] for group in sorted_groups]
+
+    # Create bar plot
+    plt.bar(sorted_groups, means)
+
+    # Add error bars showing standard deviation if requested
+    if show_error_bars:
+        plt.errorbar(
+            sorted_groups,
+            means,
+            yerr=stds,
+            fmt="none",
+            capsize=5,
+            color="black",
+            alpha=0.5,
+        )
 
     # Set up plot
     plt.xlabel("Ancestry Group")
@@ -348,6 +364,7 @@ def plot_average_correlations(average_correlations, output_dir=None, trait_name=
 
     plt.title(title)
     plt.ylim(bottom=0)
+    plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
 
     # Save plot
@@ -365,7 +382,9 @@ def plot_average_correlations(average_correlations, output_dir=None, trait_name=
         return None
 
 
-def plot_variance_by_ancestry(variance_results, output_dir=None, trait_name=None):
+def plot_variance_by_ancestry(
+    variance_results, output_dir=None, trait_name=None, show_error_bars=False
+):
     """
     Plot average variance of z-scores across PGS studies for each ancestry group.
 
@@ -375,6 +394,7 @@ def plot_variance_by_ancestry(variance_results, output_dir=None, trait_name=None
         variance_results (dict): Dictionary with variance information by ancestry group
         output_dir (str, optional): Directory to save the plot
         trait_name (str, optional): Trait name to add to title
+        show_error_bars (bool): Whether to show error bars. Default is False.
 
     Returns:
         str or None: Path to the saved plot, or None if no plot was created
@@ -389,20 +409,23 @@ def plot_variance_by_ancestry(variance_results, output_dir=None, trait_name=None
         variance_results[group]["average_variance"] for group in sorted_groups
     ]
 
-    # Create bar plot with error bars
-    std_variances = [variance_results[group]["std_variance"] for group in sorted_groups]
+    # Create bar plot
     plt.bar(sorted_groups, avg_variances)
 
-    # Add error bars showing standard deviation of individual variances
-    plt.errorbar(
-        sorted_groups,
-        avg_variances,
-        yerr=std_variances,
-        fmt="none",
-        capsize=5,
-        color="black",
-        alpha=0.5,
-    )
+    # Add error bars showing standard deviation of individual variances if requested
+    if show_error_bars:
+        std_variances = [
+            variance_results[group]["std_variance"] for group in sorted_groups
+        ]
+        plt.errorbar(
+            sorted_groups,
+            avg_variances,
+            yerr=std_variances,
+            fmt="none",
+            capsize=5,
+            color="black",
+            alpha=0.5,
+        )
 
     # Set up plot
     plt.xlabel("Ancestry Group")
@@ -415,16 +438,6 @@ def plot_variance_by_ancestry(variance_results, output_dir=None, trait_name=None
     plt.title(title)
     plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
-
-    # Add descriptive annotation
-    plt.annotate(
-        "Lower variance indicates more stable predictions across PGS models",
-        xy=(0.5, 0.01),
-        xycoords="figure fraction",
-        ha="center",
-        fontsize=10,
-        alpha=0.7,
-    )
 
     # Save plot
     if output_dir:
@@ -441,7 +454,9 @@ def plot_variance_by_ancestry(variance_results, output_dir=None, trait_name=None
         return None
 
 
-def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None):
+def visualize_analysis(
+    analysis_results=None, analysis_dir=None, output_dir=None, show_error_bars=False
+):
     """
     Visualize PGS analysis results.
 
@@ -451,6 +466,7 @@ def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None
         analysis_dir (str, optional): Directory containing analysis results.
         output_dir (str, optional): Directory to save the plots.
                                  If None, will use analysis_dir/plots.
+        show_error_bars (bool): Whether to show error bars for all plots. Default is False.
 
     Returns:
         dict: Dictionary with paths to the generated plots
@@ -573,12 +589,18 @@ def visualize_analysis(analysis_results=None, analysis_dir=None, output_dir=None
 
     # 2. Correlation plots
     plots["average_correlations"] = plot_average_correlations(
-        analysis_results["average_correlations"], output_dir, trait_name
+        analysis_results["average_correlations"],
+        output_dir,
+        trait_name,
+        show_error_bars=show_error_bars,
     )
 
     # 3. Variance plot
     plots["variance_by_ancestry"] = plot_variance_by_ancestry(
-        analysis_results["variance"], output_dir, trait_name
+        analysis_results["variance"],
+        output_dir,
+        trait_name,
+        show_error_bars=show_error_bars,
     )
 
     return {"success": True, "plots": plots}

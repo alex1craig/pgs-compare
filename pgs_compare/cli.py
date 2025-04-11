@@ -75,6 +75,11 @@ def setup_parser():
         "visualize", help="Visualize PGS analysis results"
     )
     visualize_parser.add_argument("--trait-id", help="Trait ID for organizing output")
+    visualize_parser.add_argument(
+        "--show-error-bars",
+        action="store_true",
+        help="Show error bars on plots (default: False)",
+    )
 
     # Pipeline command
     pipeline_parser = subparsers.add_parser(
@@ -102,6 +107,11 @@ def setup_parser():
     )
     pipeline_parser.add_argument(
         "--skip-visualize", action="store_true", help="Skip visualization step"
+    )
+    pipeline_parser.add_argument(
+        "--show-error-bars",
+        action="store_true",
+        help="Show error bars on plots (default: False)",
     )
 
     return parser
@@ -182,7 +192,9 @@ def main():
         logger.info(f"Results saved to: {result['output_path']}")
 
     elif args.command == "visualize":
-        result = pgs_compare.visualize(trait_id=args.trait_id)
+        result = pgs_compare.visualize(
+            trait_id=args.trait_id, show_error_bars=args.show_error_bars
+        )
 
         if not result["success"]:
             logger.error(
@@ -202,6 +214,7 @@ def main():
             max_variants=args.max_variants,
             run_ancestry=args.run_ancestry,
             visualize=not args.skip_visualize,
+            show_error_bars=args.show_error_bars,
         )
 
         if not result["success"]:
