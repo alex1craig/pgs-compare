@@ -9,6 +9,7 @@ PGS-Compare is a Python package for analyzing and comparing Polygenic Scores (PG
 - Analyze PGS score distributions across different ancestry groups
 - Compare consistency of PGS scores from different studies
 - Visualize results with publication-ready plots
+- Assess stability of PGS predictions across and within ancestry groups
 
 ## Prerequisites
 
@@ -65,10 +66,10 @@ pgs-compare calculate MONDO_0005180
 pgs-compare analyze --trait-id MONDO_0005180
 
 # Generate visualizations
-pgs-compare visualize --trait-id MONDO_0005180
+pgs-compare visualize --trait-id MONDO_0005180 --show-error-bars
 
 # Or run the full pipeline
-pgs-compare pipeline MONDO_0005180
+pgs-compare pipeline MONDO_0005180 --show-error-bars
 ```
 
 ## API Reference
@@ -127,7 +128,7 @@ Returns:
 #### visualize
 
 ```python
-pgs.visualize(trait_id=None, analysis_results=None)
+pgs.visualize(trait_id=None, analysis_results=None, show_error_bars=False)
 ```
 
 Visualize PGS analysis results.
@@ -135,6 +136,7 @@ Visualize PGS analysis results.
 Parameters:
 - `trait_id` (str, optional): Trait ID. Used for organizing output if provided.
 - `analysis_results` (dict, optional): Analysis results from analyze().
+- `show_error_bars` (bool): Whether to display error bars on plots. Default is False.
 
 Returns:
 - dict: Dictionary with paths to the generated plots
@@ -143,7 +145,7 @@ Returns:
 
 ```python
 pgs.run_pipeline(trait_id, include_child_pgs=True, max_variants=None,
-                run_ancestry=False, visualize=True)
+                run_ancestry=False, visualize=True, show_error_bars=False)
 ```
 
 Run the full pipeline (calculate, analyze, visualize) for a specific trait.
@@ -154,6 +156,7 @@ Parameters:
 - `max_variants` (int, optional): Maximum number of variants to include in PGS
 - `run_ancestry` (bool): Whether to run ancestry analysis
 - `visualize` (bool): Whether to generate visualization plots
+- `show_error_bars` (bool): Whether to display error bars on plots. Default is False.
 
 Returns:
 - dict: Pipeline results
@@ -175,6 +178,7 @@ The analysis results include:
 1. **Summary Statistics**: Basic statistics of PGS scores by ancestry group and PGS study
 2. **Correlations**: Correlation matrices showing how different PGS studies relate to each other
 3. **Variance**: Measurement of how consistently different PGS studies rank individuals within each ancestry group
+4. **PGS-specific Variance**: Variance of individual PGS scores within each ancestry group
 
 Visualizations include:
 
