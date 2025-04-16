@@ -43,7 +43,118 @@ def setup_plot(title, xlabel, ylabel, add_zero_line=False, trait_name=None):
     plt.tight_layout()
 
 
-def plot_kde(scores, label, alpha=0.75):
+def add_value_labels(bars, precision=3, fontsize=None):
+    """
+    Add value labels on top of each bar in a bar plot.
+
+    Args:
+        bars (matplotlib.container.BarContainer): The bar container returned by plt.bar()
+        precision (int): Number of decimal places to show
+        fontsize (int, optional): Font size for the value labels
+
+    Returns:
+        None
+    """
+    for bar in bars:
+        height = bar.get_height()
+        if not np.isnan(height):
+            plt.text(
+                bar.get_x() + bar.get_width() / 2.0,
+                height,
+                f"{height:.{precision}f}",
+                ha="center",
+                va="bottom",
+                fontsize=fontsize,
+            )
+
+
+def create_bar_plot(
+    x_values,
+    y_values,
+    show_error_bars=False,
+    error_values=None,
+    bar_width=None,
+    color=None,
+    alpha=1,
+    label=None,
+):
+    """
+    Create a bar plot with optional error bars.
+
+    Args:
+        x_values (list): X values for the bars
+        y_values (list): Height values for the bars
+        show_error_bars (bool): Whether to show error bars
+        error_values (list, optional): Error values for error bars
+        bar_width (float, optional): Width of the bars
+        color: Color of the bars
+        alpha (float): Alpha transparency for the bars
+        label (str, optional): Label for the bars in the legend
+
+    Returns:
+        matplotlib.container.BarContainer: The bar container
+    """
+    # Create bar plot
+    if bar_width is not None:
+        bars = plt.bar(
+            x_values, y_values, bar_width, alpha=alpha, color=color, label=label
+        )
+    else:
+        bars = plt.bar(x_values, y_values, alpha=alpha, color=color, label=label)
+
+    # Add value labels
+    add_value_labels(bars)
+
+    # Add error bars if requested
+    if show_error_bars and error_values is not None:
+        plt.errorbar(
+            x_values,
+            y_values,
+            yerr=error_values,
+            fmt="none",
+            capsize=5,
+            color="black",
+        )
+
+    return bars
+
+
+def save_plot(output_dir, subdir, filename, close_plot=True):
+    """
+    Save plot to a file.
+
+    Args:
+        output_dir (str): Base output directory
+        subdir (str): Subdirectory within the output directory
+        filename (str): Filename for the plot
+        close_plot (bool): Whether to close the plot after saving
+
+    Returns:
+        str: Path to the saved plot, or None if not saved
+    """
+    if output_dir:
+        # Create directory if it doesn't exist
+        full_dir = os.path.join(output_dir, subdir)
+        os.makedirs(full_dir, exist_ok=True)
+
+        # Save plot
+        plot_path = os.path.join(full_dir, filename)
+        plt.savefig(plot_path)
+
+        if close_plot:
+            plt.close()
+
+        return plot_path
+    else:
+        plt.show()
+
+        if close_plot:
+            plt.close()
+
+        return None
+
+
+def plot_kde(scores, label, alpha=0.8):
     """
     Plot kernel density estimate for the given scores.
 
@@ -103,18 +214,7 @@ def plot_distribution_by_ancestry(scores_df, pgs_id, output_dir=None, trait_name
     )
 
     # Save plot
-    if output_dir:
-        os.makedirs(os.path.join(output_dir, "distributions"), exist_ok=True)
-        plot_path = os.path.join(
-            output_dir, "distributions", f"{pgs_id}_distributions.png"
-        )
-        plt.savefig(plot_path)
-        plt.close()
-        return plot_path
-    else:
-        plt.show()
-        plt.close()
-        return None
+    return save_plot(output_dir, "distributions", f"{pgs_id}_distributions.png")
 
 
 def plot_distribution_by_pgs(scores_df, group, output_dir=None, trait_name=None):
@@ -154,18 +254,7 @@ def plot_distribution_by_pgs(scores_df, group, output_dir=None, trait_name=None)
     )
 
     # Save plot
-    if output_dir:
-        os.makedirs(os.path.join(output_dir, "distributions"), exist_ok=True)
-        plot_path = os.path.join(
-            output_dir, "distributions", f"{group}_distributions.png"
-        )
-        plt.savefig(plot_path)
-        plt.close()
-        return plot_path
-    else:
-        plt.show()
-        plt.close()
-        return None
+    return save_plot(output_dir, "distributions", f"{group}_distributions.png")
 
 
 def plot_standardized_distribution_by_ancestry(
@@ -199,7 +288,7 @@ def plot_standardized_distribution_by_ancestry(
         group_z_scores = scores_df.loc[mask, "z_score"]
 
         # Plot distribution
-        plot_kde(group_z_scores, group, alpha=1)
+        plot_kde(group_z_scores, group)
 
     # Set up plot
     setup_plot(
@@ -211,22 +300,11 @@ def plot_standardized_distribution_by_ancestry(
     )
 
     # Save plot
-    if output_dir:
-        os.makedirs(
-            os.path.join(output_dir, "standardized_distributions"), exist_ok=True
-        )
-        plot_path = os.path.join(
-            output_dir,
-            "standardized_distributions",
-            f"{pgs_id}_standardized_distributions.png",
-        )
-        plt.savefig(plot_path)
-        plt.close()
-        return plot_path
-    else:
-        plt.show()
-        plt.close()
-        return None
+    return save_plot(
+        output_dir,
+        "standardized_distributions",
+        f"{pgs_id}_standardized_distributions.png",
+    )
 
 
 def plot_correlation_matrix(scores_df, group, output_dir=None, trait_name=None):
@@ -296,18 +374,7 @@ def plot_correlation_matrix(scores_df, group, output_dir=None, trait_name=None):
         plt.tight_layout()
 
         # Save plot
-        if output_dir:
-            os.makedirs(os.path.join(output_dir, "correlations"), exist_ok=True)
-            plot_path = os.path.join(
-                output_dir, "correlations", f"{group}_correlation_matrix.png"
-            )
-            plt.savefig(plot_path)
-            plt.close()
-            return plot_path
-        else:
-            plt.show()
-            plt.close()
-            return None
+        return save_plot(output_dir, "correlations", f"{group}_correlation_matrix.png")
 
     except Exception as e:
         logger.warning(f"Error calculating correlation matrix for group {group}: {e}")
@@ -339,19 +406,8 @@ def plot_average_correlations(
     means = [average_correlations[group]["mean"] for group in sorted_groups]
     stds = [average_correlations[group]["std"] for group in sorted_groups]
 
-    # Create bar plot
-    plt.bar(sorted_groups, means)
-
-    # Add error bars showing standard deviation if requested
-    if show_error_bars:
-        plt.errorbar(
-            sorted_groups,
-            means,
-            yerr=stds,
-            fmt="none",
-            capsize=5,
-            color="black",
-        )
+    # Create bar plot with optional error bars
+    create_bar_plot(sorted_groups, means, show_error_bars, stds)
 
     # Set up plot
     plt.xlabel("Ancestry Group")
@@ -367,18 +423,7 @@ def plot_average_correlations(
     plt.tight_layout()
 
     # Save plot
-    if output_dir:
-        os.makedirs(os.path.join(output_dir, "correlations"), exist_ok=True)
-        plot_path = os.path.join(
-            output_dir, "correlations", "average_correlation_bar_chart.png"
-        )
-        plt.savefig(plot_path)
-        plt.close()
-        return plot_path
-    else:
-        plt.show()
-        plt.close()
-        return None
+    return save_plot(output_dir, "correlations", "average_correlation_bar_chart.png")
 
 
 def plot_variance_by_ancestry(
@@ -408,22 +453,15 @@ def plot_variance_by_ancestry(
         variance_results[group]["average_variance"] for group in sorted_groups
     ]
 
-    # Create bar plot
-    plt.bar(sorted_groups, avg_variances)
+    # Extract standard deviation if needed for error bars
+    std_variances = (
+        [variance_results[group]["std_variance"] for group in sorted_groups]
+        if show_error_bars
+        else None
+    )
 
-    # Add error bars showing standard deviation of individual variances if requested
-    if show_error_bars:
-        std_variances = [
-            variance_results[group]["std_variance"] for group in sorted_groups
-        ]
-        plt.errorbar(
-            sorted_groups,
-            avg_variances,
-            yerr=std_variances,
-            fmt="none",
-            capsize=5,
-            color="black",
-        )
+    # Create bar plot with optional error bars
+    create_bar_plot(sorted_groups, avg_variances, show_error_bars, std_variances)
 
     # Set up plot
     plt.xlabel("Ancestry Group")
@@ -438,18 +476,7 @@ def plot_variance_by_ancestry(
     plt.tight_layout()
 
     # Save plot
-    if output_dir:
-        os.makedirs(os.path.join(output_dir, "variance"), exist_ok=True)
-        plot_path = os.path.join(
-            output_dir, "variance", "average_z_score_variance_by_ancestry.png"
-        )
-        plt.savefig(plot_path)
-        plt.close()
-        return plot_path
-    else:
-        plt.show()
-        plt.close()
-        return None
+    return save_plot(output_dir, "variance", "average_z_score_variance_by_ancestry.png")
 
 
 def plot_pgs_variance(
@@ -498,11 +525,10 @@ def plot_pgs_variance(
                 variances.append(np.nan)
 
         # Plot bars
-        plt.bar(
+        bars = plt.bar(
             index + i * bar_width,
             variances,
             bar_width,
-            alpha=0.8,
             color=colors[i],
             label=group,
         )
@@ -524,16 +550,7 @@ def plot_pgs_variance(
     plt.tight_layout()
 
     # Save plot
-    if output_dir:
-        os.makedirs(os.path.join(output_dir, "variance"), exist_ok=True)
-        plot_path = os.path.join(output_dir, "variance", "pgs_variance_by_ancestry.png")
-        plt.savefig(plot_path)
-        plt.close()
-        return plot_path
-    else:
-        plt.show()
-        plt.close()
-        return None
+    return save_plot(output_dir, "variance", "pgs_variance_by_ancestry.png")
 
 
 def plot_individual_pgs_variance(
@@ -577,19 +594,10 @@ def plot_individual_pgs_variance(
                 variances.append(np.nan)
 
         # Create bar plot
-        bars = plt.bar(groups, variances, alpha=0.8)
+        bars = plt.bar(groups, variances)
 
         # Add value labels on top of each bar
-        for bar in bars:
-            height = bar.get_height()
-            if not np.isnan(height):
-                plt.text(
-                    bar.get_x() + bar.get_width() / 2.0,
-                    height,
-                    f"{height:.3f}",
-                    ha="center",
-                    va="bottom",
-                )
+        add_value_labels(bars)
 
         # Set up labels and title
         plt.xlabel("Ancestry Group")
@@ -605,14 +613,11 @@ def plot_individual_pgs_variance(
 
         # Save plot
         if output_dir:
-            os.makedirs(
-                os.path.join(output_dir, "variance", "individual_pgs"), exist_ok=True
+            plot_path = save_plot(
+                output_dir,
+                os.path.join("variance", "individual_pgs"),
+                f"{pgs}_variance.png",
             )
-            plot_path = os.path.join(
-                output_dir, "variance", "individual_pgs", f"{pgs}_variance.png"
-            )
-            plt.savefig(plot_path)
-            plt.close()
             plot_paths[pgs] = plot_path
         else:
             plt.show()
@@ -653,30 +658,8 @@ def plot_average_pgs_variance_by_group(
         avg_variances.append(np.mean(variances))
         std_variances.append(np.std(variances))
 
-    # Create bar plot
-    bars = plt.bar(groups, avg_variances, alpha=0.8)
-
-    # Add error bars if requested
-    if show_error_bars:
-        plt.errorbar(
-            groups,
-            avg_variances,
-            yerr=std_variances,
-            fmt="none",
-            capsize=5,
-            color="black",
-        )
-
-    # Add value labels on top of each bar
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(
-            bar.get_x() + bar.get_width() / 2.0,
-            height,
-            f"{height:.3f}",
-            ha="center",
-            va="bottom",
-        )
+    # Create bar plot with optional error bars
+    create_bar_plot(groups, avg_variances, show_error_bars, std_variances)
 
     # Set up labels and title
     plt.xlabel("Ancestry Group")
@@ -691,18 +674,7 @@ def plot_average_pgs_variance_by_group(
     plt.tight_layout()
 
     # Save plot
-    if output_dir:
-        os.makedirs(os.path.join(output_dir, "variance"), exist_ok=True)
-        plot_path = os.path.join(
-            output_dir, "variance", "average_pgs_variance_by_group.png"
-        )
-        plt.savefig(plot_path)
-        plt.close()
-        return plot_path
-    else:
-        plt.show()
-        plt.close()
-        return None
+    return save_plot(output_dir, "variance", "average_pgs_variance_by_group.png")
 
 
 def visualize_analysis(
