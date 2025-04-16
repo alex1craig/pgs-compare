@@ -62,14 +62,23 @@ PGS-Compare also provides a command-line interface:
 # Run calculations for Parkinson's disease
 pgs-compare calculate MONDO_0005180
 
+# Run calculations with custom options
+pgs-compare calculate MONDO_0005180 --exclude-child-pgs --max-variants 1000000 --run-ancestry
+
 # Analyze the results
 pgs-compare analyze --trait-id MONDO_0005180
+
+# Analyze with a specific scores file
+pgs-compare analyze --trait-id MONDO_0005180 --scores-file path/to/scores.txt.gz
 
 # Generate visualizations
 pgs-compare visualize --trait-id MONDO_0005180 --show-error-bars
 
 # Or run the full pipeline
 pgs-compare pipeline MONDO_0005180 --show-error-bars
+
+# Run the pipeline with custom options
+pgs-compare pipeline MONDO_0005180 --exclude-child-pgs --max-variants 1000000 --run-ancestry --skip-visualize
 ```
 
 ## API Reference
@@ -85,6 +94,7 @@ pgs = PGSCompare(data_dir=None, download_data=True)
 ```
 
 Parameters:
+
 - `data_dir` (str, optional): Directory to store data. Default is "data" in the current directory.
 - `download_data` (bool): Whether to download missing data during initialization. Defaults to True.
   If set to False, will still check for dependencies but won't download missing data.
@@ -101,6 +111,7 @@ pgs.calculate(trait_id, include_child_pgs=True, max_variants=None,
 Run PGS calculations for a specific trait.
 
 Parameters:
+
 - `trait_id` (str): Trait ID (e.g., "MONDO_0005180" for Parkinson's disease)
 - `include_child_pgs` (bool): Whether to include child-associated PGS IDs
 - `max_variants` (int, optional): Maximum number of variants to include in PGS
@@ -108,7 +119,8 @@ Parameters:
 - `reference_panel` (str, optional): Path to reference panel for ancestry analysis.
 
 Returns:
-- dict: Information about the calculation
+
+- dict: Information about the calculation including success status and output path
 
 #### analyze
 
@@ -119,11 +131,14 @@ pgs.analyze(trait_id=None, scores_file=None)
 Analyze PGS scores across ancestry groups.
 
 Parameters:
+
 - `trait_id` (str, optional): Trait ID. Used for organizing output if provided.
 - `scores_file` (str, optional): Path to the scores file (aggregated_scores.txt.gz).
+  If None, will look in the standard location based on trait_id.
 
 Returns:
-- dict: Analysis results
+
+- dict: Analysis results including summary statistics, correlations, and variance metrics
 
 #### visualize
 
@@ -134,11 +149,14 @@ pgs.visualize(trait_id=None, analysis_results=None, show_error_bars=False)
 Visualize PGS analysis results.
 
 Parameters:
+
 - `trait_id` (str, optional): Trait ID. Used for organizing output if provided.
 - `analysis_results` (dict, optional): Analysis results from analyze().
+  If None, will try to load from the standard location based on trait_id.
 - `show_error_bars` (bool): Whether to display error bars on plots. Default is False.
 
 Returns:
+
 - dict: Dictionary with paths to the generated plots
 
 #### run_pipeline
@@ -151,6 +169,7 @@ pgs.run_pipeline(trait_id, include_child_pgs=True, max_variants=None,
 Run the full pipeline (calculate, analyze, visualize) for a specific trait.
 
 Parameters:
+
 - `trait_id` (str): Trait ID (e.g., "MONDO_0005180" for Parkinson's disease)
 - `include_child_pgs` (bool): Whether to include child-associated PGS IDs
 - `max_variants` (int, optional): Maximum number of variants to include in PGS
@@ -159,7 +178,8 @@ Parameters:
 - `show_error_bars` (bool): Whether to display error bars on plots. Default is False.
 
 Returns:
-- dict: Pipeline results
+
+- dict: Pipeline results containing calculation, analysis, and visualization results
 
 ## Finding Trait IDs
 
@@ -182,11 +202,12 @@ The analysis results include:
 
 Visualizations include:
 
-1. Distribution plots by ancestry group for each PGS
-2. Standardized score distributions (z-scores)
-3. Correlation heatmaps
-4. Individual Variance plots showing the stability of PGS predictions across ancestry groups
-5. PGS Variance plots showing how each PGS deviates from the consensus prediction
+1. **Distribution plots** by ancestry group for each PGS
+2. **Standardized score distributions** (z-scores)
+3. **Correlation heatmaps** showing relationships between different PGS models
+4. **Individual Variance plots** showing the stability of PGS predictions across ancestry groups
+5. **PGS Variance plots** showing how each PGS deviates from the consensus prediction
+6. **Average PGS Variance plots** showing the average variance by ancestry group
 
 ### Individual Variance Metric
 
@@ -226,4 +247,4 @@ And also cite the underlying tools:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
