@@ -257,10 +257,12 @@ def calculate_variance(scores_df):
     # Ensure ALL is only included once
     ancestry_groups = list(set(ancestry_groups))
 
-    # Calculate variance for each individual across PGS studies
-    variance_results = {}
-    individual_variances = []
+    # Initialize result dictionaries
+    individual_variance_results = {}
     pgs_variance = {}
+
+    # Dictionaries to map variances back to scores_df
+    individual_variance_map = {}  # Maps (IID, GROUP) to individual variance
 
     for group in ancestry_groups:
         # Get scores for this ancestry group
@@ -272,45 +274,39 @@ def calculate_variance(scores_df):
             logger.warning(f"No data for ancestry group {group}")
             continue
 
-        # Calculate variance for each individual across PGS studies
-        # First pivot the data to have individuals as rows and PGS IDs as columns
+        # Create pivot table with individuals as rows and PGS IDs as columns
         pivot_data = group_data.pivot_table(
             index="IID", columns="PGS", values="z_score", aggfunc="first"
         )
 
-        # Calculate row-wise variance (variance across PGS studies for each individual)
-        individual_variance = pivot_data.var(axis=1).reset_index()
-        individual_variance.columns = ["IID", "variance"]
-        individual_variance["GROUP"] = group
-
-        # Store individual variances for potential further analysis
-        individual_variances.append(individual_variance)
-
-        # Calculate average variance for this ancestry group
-        avg_variance = float(individual_variance["variance"].mean())
-        std_variance = float(individual_variance["variance"].std())
-
-        # Store results
-        variance_results[group] = {
-            "average_variance": avg_variance,
-            "std_variance": std_variance,
-            "max_variance": float(individual_variance["variance"].max()),
-            "min_variance": float(individual_variance["variance"].min()),
-            "count": len(individual_variance),
-        }
-
         # Calculate "true" z-score for each individual (average across all PGS)
         true_zscores = pivot_data.mean(axis=1)
 
-        # For each PGS, calculate variance from the true z-score
-        if group not in pgs_variance:
-            pgs_variance[group] = {}
+        # Calculate variance for each individual across all PGS
+        individual_variances = pivot_data.var(axis=1)
+
+        # Store mapping of each individual's variance
+        for iid, variance in individual_variances.items():
+            individual_variance_map[(iid, group)] = variance
+
+        # Calculate summary statistics for this group
+        individual_variance_results[group] = {
+            "average_variance": float(individual_variances.mean()),
+            "std_variance": float(individual_variances.std()),
+            "max_variance": float(individual_variances.max()),
+            "min_variance": float(individual_variances.min()),
+            "count": len(individual_variances),
+        }
+
+        pgs_variance[group] = {}
 
         for pgs in pivot_data.columns:
             # Calculate squared differences between this PGS's scores and true scores
             squared_diffs = (pivot_data[pgs] - true_zscores) ** 2
+
             # Calculate mean of squared differences (MSE)
             mse = squared_diffs.mean()
+
             # Store the result
             pgs_variance[group][pgs] = {
                 "variance": float(mse),
@@ -319,31 +315,19 @@ def calculate_variance(scores_df):
                 "count": len(squared_diffs),
             }
 
-    # Combine all individual variances
-    if individual_variances:
-        all_individual_variances = pd.concat(individual_variances, ignore_index=True)
-
-        # Save individual variances to the scores_df for potential further analysis
-        # This is done by creating a mapping from IID+GROUP to variance
-        variance_map = all_individual_variances.set_index(["IID", "GROUP"])[
-            "variance"
-        ].to_dict()
-
-        # Add a tuple column for mapping
-        scores_df["iid_group"] = list(zip(scores_df["IID"], scores_df["GROUP"]))
-
-        # Map variances to the original dataframe
-        scores_df["individual_variance"] = scores_df["iid_group"].map(
-            lambda x: variance_map.get(x, np.nan)
-        )
-
-        # Remove the temporary column
-        scores_df.drop("iid_group", axis=1, inplace=True)
+    # Add individual variance column
+    scores_df["individual_variance"] = scores_df.apply(
+        lambda row: individual_variance_map.get((row["IID"], row["GROUP"]), np.nan),
+        axis=1,
+    )
 
     logger.info(
-        f"Calculated z-score variances for {len(variance_results)} ancestry groups"
+        f"Calculated z-score variances for {len(individual_variance_results)} ancestry groups"
     )
-    return {"individual_variance": variance_results, "pgs_variance": pgs_variance}
+    return {
+        "individual_variance": individual_variance_results,
+        "pgs_variance": pgs_variance,
+    }
 
 
 def analyze_scores(trait_id=None, scores_file=None, data_dir=None, output_dir=None):
