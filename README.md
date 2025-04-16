@@ -250,12 +250,13 @@ By comparing PGS variance across ancestry groups, researchers can identify which
 If you use PGS-Compare in your research, please cite:
 
 ```
-PGS-Compare: A tool for analyzing the stability of polygenic scores across ancestry groups
+[PGS-Compare](https://github.com/alex1craig/pgs-compare)
 ```
 
 And also cite the underlying tools:
 
 - The PGS Catalog: https://doi.org/10.1038/s41588-021-00783-5
+- pgsc_calc: https:/doi:10.1038/s41588-024-01937-x
 - The 1000 Genomes Project: https://doi.org/10.1038/nature15393
 - PLINK 2: https://www.cog-genomics.org/plink/2.0/
 
