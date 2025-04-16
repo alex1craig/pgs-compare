@@ -351,7 +351,6 @@ def plot_average_correlations(
             fmt="none",
             capsize=5,
             color="black",
-            alpha=0.5,
         )
 
     # Set up plot
@@ -424,7 +423,6 @@ def plot_variance_by_ancestry(
             fmt="none",
             capsize=5,
             color="black",
-            alpha=0.5,
         )
 
     # Set up plot
@@ -444,6 +442,259 @@ def plot_variance_by_ancestry(
         os.makedirs(os.path.join(output_dir, "variance"), exist_ok=True)
         plot_path = os.path.join(
             output_dir, "variance", "average_z_score_variance_by_ancestry.png"
+        )
+        plt.savefig(plot_path)
+        plt.close()
+        return plot_path
+    else:
+        plt.show()
+        plt.close()
+        return None
+
+
+def plot_pgs_variance(
+    pgs_variance, output_dir=None, trait_name=None, show_error_bars=False
+):
+    """
+    Plot variance of each PGS from the "true" z-score (average across all PGS) by ancestry group.
+
+    Lower variance indicates the PGS is more consistent with the consensus prediction.
+
+    Args:
+        pgs_variance (dict): Dictionary with PGS variance information by ancestry group
+        output_dir (str, optional): Directory to save the plot
+        trait_name (str, optional): Trait name to add to title
+        show_error_bars (bool): Whether to show error bars. Default is False.
+
+    Returns:
+        str or None: Path to the saved plot, or None if no plot was created
+    """
+    plt.figure(figsize=(14, 8))
+
+    # Get all unique PGS IDs across all groups
+    all_pgs = set()
+    for group in pgs_variance:
+        all_pgs.update(pgs_variance[group].keys())
+    all_pgs = sorted(list(all_pgs))
+
+    # Get all ancestry groups
+    groups = sorted(pgs_variance.keys())
+
+    # Set up the bar chart
+    bar_width = 0.8 / len(groups)
+    index = np.arange(len(all_pgs))
+
+    # Set up colors
+    colors = plt.cm.tab10(np.linspace(0, 1, len(groups)))
+
+    # Plot bars for each group
+    for i, group in enumerate(groups):
+        # Extract variances for this group
+        variances = []
+        for pgs in all_pgs:
+            if pgs in pgs_variance[group]:
+                variances.append(pgs_variance[group][pgs]["variance"])
+            else:
+                variances.append(np.nan)
+
+        # Plot bars
+        plt.bar(
+            index + i * bar_width,
+            variances,
+            bar_width,
+            alpha=0.8,
+            color=colors[i],
+            label=group,
+        )
+
+    # Set up labels and title
+    plt.xlabel("Polygenic Score")
+    plt.ylabel("Variance from Consensus Z-Score")
+
+    title = "PGS Variance from Consensus Z-Score by Ancestry Group"
+    if trait_name:
+        title += f" ({trait_name})"
+    plt.title(title)
+
+    plt.xticks(
+        index + bar_width * (len(groups) - 1) / 2, all_pgs, rotation=45, ha="right"
+    )
+    plt.legend()
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+
+    # Save plot
+    if output_dir:
+        os.makedirs(os.path.join(output_dir, "variance"), exist_ok=True)
+        plot_path = os.path.join(output_dir, "variance", "pgs_variance_by_ancestry.png")
+        plt.savefig(plot_path)
+        plt.close()
+        return plot_path
+    else:
+        plt.show()
+        plt.close()
+        return None
+
+
+def plot_individual_pgs_variance(
+    pgs_variance, output_dir=None, trait_name=None, show_error_bars=False
+):
+    """
+    Create individual plots for each PGS showing its variance from the consensus
+    z-score across different ancestry groups.
+
+    Args:
+        pgs_variance (dict): Dictionary with PGS variance information by ancestry group
+        output_dir (str, optional): Directory to save the plots
+        trait_name (str, optional): Trait name to add to title
+        show_error_bars (bool): Whether to show error bars. Default is False.
+
+    Returns:
+        dict: Dictionary mapping PGS IDs to paths of saved plots
+    """
+    # Get all unique PGS IDs across all groups
+    all_pgs = set()
+    for group in pgs_variance:
+        all_pgs.update(pgs_variance[group].keys())
+    all_pgs = sorted(list(all_pgs))
+
+    # Get all ancestry groups
+    groups = sorted(pgs_variance.keys())
+
+    # Dictionary to store paths of saved plots
+    plot_paths = {}
+
+    # Create a plot for each PGS
+    for pgs in all_pgs:
+        plt.figure(figsize=(10, 6))
+
+        # Extract variances for this PGS across groups
+        variances = []
+        for group in groups:
+            if pgs in pgs_variance[group]:
+                variances.append(pgs_variance[group][pgs]["variance"])
+            else:
+                variances.append(np.nan)
+
+        # Create bar plot
+        bars = plt.bar(groups, variances, alpha=0.8)
+
+        # Add value labels on top of each bar
+        for bar in bars:
+            height = bar.get_height()
+            if not np.isnan(height):
+                plt.text(
+                    bar.get_x() + bar.get_width() / 2.0,
+                    height,
+                    f"{height:.3f}",
+                    ha="center",
+                    va="bottom",
+                )
+
+        # Set up labels and title
+        plt.xlabel("Ancestry Group")
+        plt.ylabel("Variance from Consensus Z-Score")
+
+        title = f"Variance of {pgs} from Consensus Z-Score by Ancestry Group"
+        if trait_name:
+            title += f" ({trait_name})"
+        plt.title(title)
+
+        plt.grid(axis="y", alpha=0.3)
+        plt.tight_layout()
+
+        # Save plot
+        if output_dir:
+            os.makedirs(
+                os.path.join(output_dir, "variance", "individual_pgs"), exist_ok=True
+            )
+            plot_path = os.path.join(
+                output_dir, "variance", "individual_pgs", f"{pgs}_variance.png"
+            )
+            plt.savefig(plot_path)
+            plt.close()
+            plot_paths[pgs] = plot_path
+        else:
+            plt.show()
+            plt.close()
+
+    return plot_paths
+
+
+def plot_average_pgs_variance_by_group(
+    pgs_variance, output_dir=None, trait_name=None, show_error_bars=False
+):
+    """
+    Plot the average PGS variance across all PGS for each ancestry group.
+
+    Args:
+        pgs_variance (dict): Dictionary with PGS variance information by ancestry group
+        output_dir (str, optional): Directory to save the plot
+        trait_name (str, optional): Trait name to add to title
+        show_error_bars (bool): Whether to show error bars. Default is False.
+
+    Returns:
+        str or None: Path to the saved plot, or None if no plot was created
+    """
+    plt.figure(figsize=(10, 6))
+
+    # Calculate average variance for each group
+    groups = sorted(pgs_variance.keys())
+    avg_variances = []
+    std_variances = []
+
+    for group in groups:
+        # Get all variances for this group
+        variances = [
+            pgs_variance[group][pgs]["variance"] for pgs in pgs_variance[group]
+        ]
+
+        # Calculate mean and standard deviation
+        avg_variances.append(np.mean(variances))
+        std_variances.append(np.std(variances))
+
+    # Create bar plot
+    bars = plt.bar(groups, avg_variances, alpha=0.8)
+
+    # Add error bars if requested
+    if show_error_bars:
+        plt.errorbar(
+            groups,
+            avg_variances,
+            yerr=std_variances,
+            fmt="none",
+            capsize=5,
+            color="black",
+        )
+
+    # Add value labels on top of each bar
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            height,
+            f"{height:.3f}",
+            ha="center",
+            va="bottom",
+        )
+
+    # Set up labels and title
+    plt.xlabel("Ancestry Group")
+    plt.ylabel("Average Variance from Consensus Z-Score")
+
+    title = "Average PGS Variance from Consensus Z-Score by Ancestry Group"
+    if trait_name:
+        title += f" ({trait_name})"
+    plt.title(title)
+
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+
+    # Save plot
+    if output_dir:
+        os.makedirs(os.path.join(output_dir, "variance"), exist_ok=True)
+        plot_path = os.path.join(
+            output_dir, "variance", "average_pgs_variance_by_group.png"
         )
         plt.savefig(plot_path)
         plt.close()
@@ -493,9 +744,13 @@ def visualize_analysis(
             ) as f:
                 average_correlations = json.load(f)
 
-            # Load variance (previously deviations)
-            with open(os.path.join(analysis_dir, "variance.json"), "r") as f:
-                variance = json.load(f)
+            # Load individual variance (previously just "variance")
+            with open(os.path.join(analysis_dir, "individual_variance.json"), "r") as f:
+                individual_variance = json.load(f)
+
+            # Load PGS variance
+            with open(os.path.join(analysis_dir, "pgs_variance.json"), "r") as f:
+                pgs_variance = json.load(f)
 
             # Load standardized scores
             standardized_scores = pd.read_csv(
@@ -506,7 +761,8 @@ def visualize_analysis(
                 "summary_statistics": summary_statistics,
                 "correlations": correlations,
                 "average_correlations": average_correlations,
-                "variance": variance,
+                "individual_variance": individual_variance,
+                "pgs_variance": pgs_variance,
                 "trait_id": (
                     os.path.basename(os.path.dirname(analysis_dir))
                     if os.path.dirname(analysis_dir)
@@ -597,7 +853,32 @@ def visualize_analysis(
 
     # 3. Variance plot
     plots["variance_by_ancestry"] = plot_variance_by_ancestry(
-        analysis_results["variance"],
+        analysis_results["individual_variance"],
+        output_dir,
+        trait_name,
+        show_error_bars=show_error_bars,
+    )
+
+    # 4. PGS variance plot
+    plots["pgs_variance"] = plot_pgs_variance(
+        analysis_results["pgs_variance"],
+        output_dir,
+        trait_name,
+        show_error_bars=show_error_bars,
+    )
+
+    # 5. Individual PGS variance plots
+    individual_plots = plot_individual_pgs_variance(
+        analysis_results["pgs_variance"],
+        output_dir,
+        trait_name,
+        show_error_bars=show_error_bars,
+    )
+    plots["individual_pgs_variance"] = individual_plots
+
+    # 6. Average PGS variance by group plot
+    plots["average_pgs_variance_by_group"] = plot_average_pgs_variance_by_group(
+        analysis_results["pgs_variance"],
         output_dir,
         trait_name,
         show_error_bars=show_error_bars,

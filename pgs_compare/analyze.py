@@ -138,12 +138,11 @@ def standardize_scores(scores_df):
     # Initialize z-score column
     scores_df["z_score"] = np.nan
 
-    # Get unique ancestry groups (including "ALL")
-    ancestry_groups = list(scores_df["GROUP"].unique())
+    # Get unique ancestry groups
+    ancestry_groups = list(scores_df["GROUP"].unique()) + ["ALL"]
 
-    # Make sure "ALL" is included even if not in the original data
-    if "ALL" not in ancestry_groups:
-        ancestry_groups.append("ALL")
+    # Ensure ALL is only included once
+    ancestry_groups = list(set(ancestry_groups))
 
     # Standardize within each ancestry group for each PGS
     for pgs_id in scores_df["PGS"].unique():
@@ -244,11 +243,14 @@ def calculate_variance(scores_df):
     This measures how consistently individuals are ranked by different PGS studies.
     Lower variance indicates more stable predictions across PGS models.
 
+    Also calculates PGS variance - the variance of each PGS's predictions from the
+    "true" z-score (average of all PGS for each individual).
+
     Args:
         scores_df (pandas.DataFrame): DataFrame with scores and ancestry information
 
     Returns:
-        dict: Dictionary with variance information by ancestry group
+        dict: Dictionary with variance information by ancestry group and PGS
     """
     ancestry_groups = list(scores_df["GROUP"].unique()) + ["ALL"]
 
@@ -258,6 +260,7 @@ def calculate_variance(scores_df):
     # Calculate variance for each individual across PGS studies
     variance_results = {}
     individual_variances = []
+    pgs_variance = {}
 
     for group in ancestry_groups:
         # Get scores for this ancestry group
@@ -296,6 +299,26 @@ def calculate_variance(scores_df):
             "count": len(individual_variance),
         }
 
+        # Calculate "true" z-score for each individual (average across all PGS)
+        true_zscores = pivot_data.mean(axis=1)
+
+        # For each PGS, calculate variance from the true z-score
+        if group not in pgs_variance:
+            pgs_variance[group] = {}
+
+        for pgs in pivot_data.columns:
+            # Calculate squared differences between this PGS's scores and true scores
+            squared_diffs = (pivot_data[pgs] - true_zscores) ** 2
+            # Calculate mean of squared differences (MSE)
+            mse = squared_diffs.mean()
+            # Store the result
+            pgs_variance[group][pgs] = {
+                "variance": float(mse),
+                "rmse": float(np.sqrt(mse)),
+                "mean_abs_diff": float((pivot_data[pgs] - true_zscores).abs().mean()),
+                "count": len(squared_diffs),
+            }
+
     # Combine all individual variances
     if individual_variances:
         all_individual_variances = pd.concat(individual_variances, ignore_index=True)
@@ -320,7 +343,7 @@ def calculate_variance(scores_df):
     logger.info(
         f"Calculated z-score variances for {len(variance_results)} ancestry groups"
     )
-    return variance_results
+    return {"individual_variance": variance_results, "pgs_variance": pgs_variance}
 
 
 def analyze_scores(trait_id=None, scores_file=None, data_dir=None, output_dir=None):
@@ -395,14 +418,17 @@ def analyze_scores(trait_id=None, scores_file=None, data_dir=None, output_dir=No
     results["average_correlations"] = correlation_results["average_correlations"]
 
     # Calculate variance
-    results["variance"] = calculate_variance(scores_df)
+    variance_results = calculate_variance(scores_df)
+    results["individual_variance"] = variance_results["individual_variance"]
+    results["pgs_variance"] = variance_results["pgs_variance"]
 
     # Save results to JSON files
     for key in [
         "summary_statistics",
         "correlations",
         "average_correlations",
-        "variance",
+        "individual_variance",
+        "pgs_variance",
     ]:
         output_file = os.path.join(output_dir, f"{key}.json")
         with open(output_file, "w") as f:

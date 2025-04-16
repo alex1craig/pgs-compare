@@ -177,19 +177,20 @@ The analysis results include:
 
 1. **Summary Statistics**: Basic statistics of PGS scores by ancestry group and PGS study
 2. **Correlations**: Correlation matrices showing how different PGS studies relate to each other
-3. **Variance**: Measurement of how consistently different PGS studies rank individuals within each ancestry group
-4. **PGS-specific Variance**: Variance of individual PGS scores within each ancestry group
+3. **Individual Variance**: Measurement of how consistently different PGS studies rank individuals within each ancestry group
+4. **PGS Variance**: Measurement of how each PGS deviates from the consensus prediction across individuals
 
 Visualizations include:
 
 1. Distribution plots by ancestry group for each PGS
 2. Standardized score distributions (z-scores)
 3. Correlation heatmaps
-4. Variance plots showing the stability of PGS predictions across ancestry groups
+4. Individual Variance plots showing the stability of PGS predictions across ancestry groups
+5. PGS Variance plots showing how each PGS deviates from the consensus prediction
 
-### Variance Metric
+### Individual Variance Metric
 
-The variance metric quantifies the stability of PGS predictions across different studies:
+The individual variance metric quantifies the stability of PGS predictions across different studies:
 
 - For each individual, we calculate the variance of their z-scores across all PGS studies
 - These individual variances are then averaged within each ancestry group
@@ -197,6 +198,17 @@ The variance metric quantifies the stability of PGS predictions across different
 - Higher variance suggests less consistency across different PGS models
 
 This metric is particularly useful for comparing prediction stability between European and non-European ancestry groups, as PGS studies typically show higher variance in non-European populations due to training bias.
+
+### PGS Variance Metric
+
+The PGS variance metric quantifies how each PGS deviates from the consensus prediction:
+
+- For each individual, we calculate the average z-score across all PGS studies, which serves as the "true" z-score
+- For each PGS, we calculate the variance of its predictions from these "true" z-scores
+- PGS with higher variance are those that tend to deviate more from the consensus prediction
+- This metric helps identify which PGS are outliers compared to the overall consensus
+
+By comparing PGS variance across ancestry groups, researchers can identify which models are more consistent or divergent for different populations, potentially highlighting PGS that might be more biased for certain ancestry groups.
 
 ## Citing PGS-Compare
 
