@@ -17,6 +17,7 @@ The package relies on the following external tools:
 
 1. [PLINK 2](https://www.cog-genomics.org/plink/2.0/) - For genetic data processing
 2. [Nextflow](https://www.nextflow.io/) - For running the PGS Catalog Calculator
+3. [Docker](https://www.docker.com/) - For running the Nextflow workflow
 
 Make sure these tools are installed and available in your PATH before using PGS-Compare.
 
@@ -65,6 +66,12 @@ pgs-compare calculate MONDO_0005180
 # Run calculations with custom options
 pgs-compare calculate MONDO_0005180 --exclude-child-pgs --max-variants 1000000 --run-ancestry
 
+# Run calculations with specific PGS IDs
+pgs-compare calculate MONDO_0005180 --pgs-ids PGS001229,PGS001405
+
+# Calculate with only custom PGS IDs (no trait)
+pgs-compare calculate none --pgs-ids PGS001229,PGS001405
+
 # Analyze the results
 pgs-compare analyze --trait-id MONDO_0005180
 
@@ -79,6 +86,9 @@ pgs-compare pipeline MONDO_0005180 --show-error-bars
 
 # Run the pipeline with custom options
 pgs-compare pipeline MONDO_0005180 --exclude-child-pgs --max-variants 1000000 --run-ancestry --skip-visualize
+
+# Run the pipeline with specific PGS IDs
+pgs-compare pipeline MONDO_0005180 --pgs-ids PGS001229,PGS001405
 ```
 
 ## API Reference
@@ -105,7 +115,7 @@ Methods:
 
 ```python
 pgs.calculate(trait_id, include_child_pgs=True, max_variants=None,
-              run_ancestry=False, reference_panel=None)
+              run_ancestry=False, reference_panel=None, pgs_ids=None)
 ```
 
 Run PGS calculations for a specific trait.
@@ -117,6 +127,8 @@ Parameters:
 - `max_variants` (int, optional): Maximum number of variants to include in PGS
 - `run_ancestry` (bool): Whether to run ancestry analysis
 - `reference_panel` (str, optional): Path to reference panel for ancestry analysis.
+- `pgs_ids` (str, optional): Custom comma-separated string of PGS IDs to calculate (e.g., "PGS001229,PGS001405").
+  If provided, will use these instead of fetching based on trait_id.
 
 Returns:
 
@@ -163,7 +175,7 @@ Returns:
 
 ```python
 pgs.run_pipeline(trait_id, include_child_pgs=True, max_variants=None,
-                run_ancestry=False, visualize=True, show_error_bars=False)
+                run_ancestry=False, visualize=True, show_error_bars=False, pgs_ids=None)
 ```
 
 Run the full pipeline (calculate, analyze, visualize) for a specific trait.
@@ -176,6 +188,8 @@ Parameters:
 - `run_ancestry` (bool): Whether to run ancestry analysis
 - `visualize` (bool): Whether to generate visualization plots
 - `show_error_bars` (bool): Whether to display error bars on plots. Default is False.
+- `pgs_ids` (str, optional): Custom comma-separated string of PGS IDs to calculate (e.g., "PGS001229,PGS001405").
+  If provided, will use these instead of fetching based on trait_id.
 
 Returns:
 

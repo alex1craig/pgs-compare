@@ -60,6 +60,10 @@ def setup_parser():
     calc_parser.add_argument(
         "--reference-panel", help="Path to reference panel for ancestry analysis"
     )
+    calc_parser.add_argument(
+        "--pgs-ids",
+        help="Custom comma-separated string of PGS IDs to calculate (e.g., PGS001229,PGS001405). If provided, trait_id is optional.",
+    )
 
     # Analyze command
     analyze_parser = subparsers.add_parser(
@@ -112,6 +116,10 @@ def setup_parser():
         "--show-error-bars",
         action="store_true",
         help="Show error bars on plots (default: False)",
+    )
+    pipeline_parser.add_argument(
+        "--pgs-ids",
+        help="Custom comma-separated string of PGS IDs to calculate (e.g., PGS001229,PGS001405). If provided, trait_id is optional.",
     )
 
     return parser
@@ -170,6 +178,7 @@ def main():
             max_variants=args.max_variants,
             run_ancestry=args.run_ancestry,
             reference_panel=args.reference_panel,
+            pgs_ids=args.pgs_ids,
         )
 
         if not result["success"]:
@@ -215,6 +224,7 @@ def main():
             run_ancestry=args.run_ancestry,
             visualize=not args.skip_visualize,
             show_error_bars=args.show_error_bars,
+            pgs_ids=args.pgs_ids,
         )
 
         if not result["success"]:

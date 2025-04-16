@@ -89,6 +89,7 @@ class PGSCompare:
         max_variants=None,
         run_ancestry=False,
         reference_panel=None,
+        pgs_ids=None,
     ):
         """
         Run PGS calculations for a specific trait.
@@ -100,11 +101,15 @@ class PGSCompare:
             run_ancestry (bool): Whether to run ancestry analysis
             reference_panel (str, optional): Path to reference panel for ancestry analysis.
                 If None and run_ancestry is True, uses the default reference panel.
+            pgs_ids (str, optional): Custom comma-separated string of PGS IDs to calculate.
+                If provided, will use these instead of fetching based on trait_id.
 
         Returns:
             dict: Information about the calculation
         """
-        output_dir = os.path.join(self.results_dir, trait_id)
+        output_dir = os.path.join(
+            self.results_dir, trait_id if trait_id else "custom_pgs"
+        )
 
         # Check if 1000 Genomes data is available
         panel_file = os.path.join(
@@ -125,6 +130,7 @@ class PGSCompare:
             run_ancestry=run_ancestry,
             reference_panel=reference_panel
             or os.path.join(self.reference_dir, "pgsc_1000G_v1.tar.zst"),
+            pgs_ids=pgs_ids,
         )
 
     def analyze(self, trait_id=None, scores_file=None):
@@ -188,6 +194,7 @@ class PGSCompare:
         run_ancestry=False,
         visualize=True,
         show_error_bars=False,
+        pgs_ids=None,
     ):
         """
         Run the full pipeline (calculate, analyze, visualize) for a specific trait.
@@ -199,6 +206,8 @@ class PGSCompare:
             run_ancestry (bool): Whether to run ancestry analysis
             visualize (bool): Whether to generate visualization plots
             show_error_bars (bool): Whether to show error bars for all plots. Default is False.
+            pgs_ids (str, optional): Custom comma-separated string of PGS IDs to calculate.
+                If provided, will use these instead of fetching based on trait_id.
 
         Returns:
             dict: Pipeline results
@@ -209,6 +218,7 @@ class PGSCompare:
             include_child_pgs=include_child_pgs,
             max_variants=max_variants,
             run_ancestry=run_ancestry,
+            pgs_ids=pgs_ids,
         )
 
         if not calc_results["success"]:

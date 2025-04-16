@@ -157,6 +157,7 @@ def run_pgs_calculation(
     max_variants=None,
     run_ancestry=False,
     reference_panel=None,
+    pgs_ids=None,
 ):
     """
     Run PGS calculations for a specific trait.
@@ -170,6 +171,8 @@ def run_pgs_calculation(
         run_ancestry (bool): Whether to run ancestry analysis
         reference_panel (str, optional): Path to reference panel for ancestry analysis.
             If None and run_ancestry is True, uses the default reference panel.
+        pgs_ids (str, optional): Custom comma-separated string of PGS IDs to calculate.
+            If provided, will use these instead of fetching based on trait_id.
 
     Returns:
         dict: Information about the calculation, including:
@@ -195,13 +198,43 @@ def run_pgs_calculation(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Fetch PGS IDs for the trait
-    pgs_ids, trait_label, trait_response = fetch_pgs_ids(
-        trait_id, include_child_pgs=include_child_pgs, max_variants=max_variants
-    )
+    # Use provided PGS IDs or fetch them from trait
+    trait_label = None
+    trait_response = {}
 
-    if not pgs_ids:
-        logger.error(f"No valid PGS IDs found for trait {trait_id}")
+    if pgs_ids:
+        # Use the provided PGS IDs
+        pgs_id_list = pgs_ids.split(",")
+        logger.info(f"Using provided PGS IDs: {pgs_ids}")
+
+        # Try to get trait label if trait_id is also provided
+        if trait_id:
+            try:
+                trait_response = requests.get(
+                    f"https://www.pgscatalog.org/rest/trait/{trait_id}"
+                ).json()
+                trait_label = trait_response.get("label", "Custom PGS Set")
+            except requests.RequestException:
+                trait_label = "Custom PGS Set"
+        else:
+            trait_label = "Custom PGS Set"
+    else:
+        # Fetch PGS IDs for the trait
+        if not trait_id:
+            logger.error("Trait_id must be provided")
+            return {
+                "pgs_ids": [],
+                "trait_label": None,
+                "output_path": output_dir,
+                "success": False,
+            }
+
+        pgs_id_list, trait_label, trait_response = fetch_pgs_ids(
+            trait_id, include_child_pgs=include_child_pgs, max_variants=max_variants
+        )
+
+    if not pgs_id_list:
+        logger.error(f"No valid PGS IDs found")
         return {
             "pgs_ids": [],
             "trait_label": trait_label,
@@ -226,7 +259,7 @@ def run_pgs_calculation(
         "--target_build",
         "GRCh37",
         "--pgs_id",
-        ",".join(pgs_ids),
+        ",".join(pgs_id_list),
     ]
 
     # Add ancestry analysis if requested
@@ -244,7 +277,7 @@ def run_pgs_calculation(
             logger.warning("Proceeding without ancestry analysis")
 
     # Run the command
-    logger.info(f"Running PGS calculation for trait {trait_id} ({trait_label})")
+    logger.info(f"Running PGS calculation for {len(pgs_id_list)} PGS IDs")
     logger.info(f"Command: {' '.join(cmd)}")
 
     try:
@@ -270,14 +303,15 @@ def run_pgs_calculation(
         else:
             logger.warning(f"Could not find score results at {score_path}")
 
-        # Save trait information
-        trait_info_path = os.path.join(result_dir, f"{trait_id}_info.json")
-        with open(trait_info_path, "w") as f:
-            json.dump(trait_response, f)
+        # Save trait information if available
+        if trait_id and trait_response:
+            trait_info_path = os.path.join(result_dir, f"{trait_id}_info.json")
+            with open(trait_info_path, "w") as f:
+                json.dump(trait_response, f)
 
-        logger.info(f"PGS calculation completed for trait {trait_id}")
+        logger.info(f"PGS calculation completed")
         return {
-            "pgs_ids": pgs_ids,
+            "pgs_ids": pgs_id_list,
             "trait_label": trait_label,
             "output_path": (
                 results_score_dir if os.path.exists(results_score_dir) else result_dir
@@ -288,7 +322,7 @@ def run_pgs_calculation(
     except subprocess.CalledProcessError as e:
         logger.error(f"Error running PGS calculation: {e}")
         return {
-            "pgs_ids": pgs_ids,
+            "pgs_ids": pgs_id_list,
             "trait_label": trait_label,
             "output_path": output_dir,
             "success": False,
