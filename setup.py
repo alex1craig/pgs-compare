@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="pgs_compare",
-    version="0.1.5",
+    version="0.1.6",
     author="Alexander Craig",
     description="Compare PGS scores across ancestry groups",
     long_description=long_description,
