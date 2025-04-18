@@ -217,11 +217,12 @@ The analysis results include:
 Visualizations include:
 
 1. **Distribution plots** by ancestry group for each PGS
-2. **Standardized score distributions** (z-scores)
-3. **Correlation heatmaps** showing relationships between different PGS models
-4. **Individual Variance plots** showing the stability of PGS predictions across ancestry groups
-5. **PGS Variance plots** showing how each PGS deviates from the consensus prediction
-6. **Average PGS Variance plots** showing the average variance by ancestry group
+2. **Standardized score distributions** (z-scores) by ancestry group for each PGS
+3. **Standardized distributions by PGS** (z-scores) for each ancestry group
+4. **Correlation heatmaps** showing relationships between different PGS models
+5. **Individual Variance plots** showing the stability of PGS predictions across ancestry groups
+6. **PGS Variance plots** showing how each PGS deviates from the consensus prediction
+7. **Average PGS Variance plots** showing the average variance by ancestry group
 
 ### Individual Variance Metric
 

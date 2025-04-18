@@ -213,11 +213,14 @@ def run_pgs_calculation(
                 trait_response = requests.get(
                     f"https://www.pgscatalog.org/rest/trait/{trait_id}"
                 ).json()
-                trait_label = trait_response.get("label", "Custom PGS Set")
+                trait_label = trait_response.get("label", "CustomPGS")
             except requests.RequestException:
-                trait_label = "Custom PGS Set"
+                logger.warning(
+                    "Failed to fetch trait label from PGS Catalog. Using 'CustomPGS' as trait label."
+                )
+                trait_label = "CustomPGS"
         else:
-            trait_label = "Custom PGS Set"
+            trait_label = "CustomPGS"
     else:
         # Fetch PGS IDs for the trait
         if not trait_id:

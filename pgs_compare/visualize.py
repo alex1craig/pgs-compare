@@ -307,6 +307,50 @@ def plot_standardized_distribution_by_ancestry(
     )
 
 
+def plot_standardized_distribution_by_pgs(
+    scores_df, group, output_dir=None, trait_name=None
+):
+    """
+    Plot standardized distribution of z-scores by PGS for a specific ancestry group.
+
+    Args:
+        scores_df (pandas.DataFrame): DataFrame with standardized scores and ancestry information
+        group (str): Ancestry group to plot (e.g., 'EUR', 'ALL')
+        output_dir (str, optional): Directory to save the plot
+        trait_name (str, optional): Trait name to add to title
+
+    Returns:
+        str or None: Path to the saved plot, or None if no plot was created
+    """
+    plt.figure(figsize=(10, 6))
+
+    # Filter for this ancestry group
+    group_scores = (
+        scores_df if group == "ALL" else scores_df[scores_df["GROUP"] == group]
+    )
+
+    # Plot standardized distribution for each PGS
+    for pgs_id in scores_df["PGS"].unique():
+        z_scores = group_scores[group_scores["PGS"] == pgs_id]["z_score"]
+        plot_kde(z_scores, pgs_id, alpha=1)
+
+    # Set up plot formatting
+    setup_plot(
+        f"Standardized Distribution of PGS Scores in {group}",
+        "Z-Score",
+        "Density",
+        add_zero_line=True,
+        trait_name=trait_name,
+    )
+
+    # Save plot
+    return save_plot(
+        output_dir,
+        "standardized_distributions",
+        f"{group}_standardized_distributions.png",
+    )
+
+
 def plot_correlation_matrix(scores_df, group, output_dir=None, trait_name=None):
     """
     Plot correlation matrix for a specific ancestry group.
@@ -505,17 +549,17 @@ def plot_pgs_variance(
     all_pgs = sorted(list(all_pgs))
 
     # Get all ancestry groups
-    groups = sorted(pgs_variance.keys())
+    sorted_groups = sorted(pgs_variance.keys())
 
     # Set up the bar chart
-    bar_width = 0.8 / len(groups)
+    bar_width = 0.8 / len(sorted_groups)
     index = np.arange(len(all_pgs))
 
     # Set up colors
-    colors = plt.cm.tab10(np.linspace(0, 1, len(groups)))
+    colors = plt.cm.tab10(np.linspace(0, 1, len(sorted_groups)))
 
     # Plot bars for each group
-    for i, group in enumerate(groups):
+    for i, group in enumerate(sorted_groups):
         # Extract variances for this group
         variances = []
         for pgs in all_pgs:
@@ -543,7 +587,10 @@ def plot_pgs_variance(
     plt.title(title)
 
     plt.xticks(
-        index + bar_width * (len(groups) - 1) / 2, all_pgs, rotation=45, ha="right"
+        index + bar_width * (len(sorted_groups) - 1) / 2,
+        all_pgs,
+        rotation=45,
+        ha="right",
     )
     plt.legend()
     plt.grid(axis="y", alpha=0.3)
@@ -576,7 +623,7 @@ def plot_individual_pgs_variance(
     all_pgs = sorted(list(all_pgs))
 
     # Get all ancestry groups
-    groups = sorted(pgs_variance.keys())
+    sorted_groups = sorted(pgs_variance.keys())
 
     # Dictionary to store paths of saved plots
     plot_paths = {}
@@ -587,14 +634,14 @@ def plot_individual_pgs_variance(
 
         # Extract variances for this PGS across groups
         variances = []
-        for group in groups:
+        for group in sorted_groups:
             if pgs in pgs_variance[group]:
                 variances.append(pgs_variance[group][pgs]["variance"])
             else:
                 variances.append(np.nan)
 
         # Create bar plot
-        bars = plt.bar(groups, variances)
+        bars = plt.bar(sorted_groups, variances)
 
         # Add value labels on top of each bar
         add_value_labels(bars)
@@ -644,11 +691,11 @@ def plot_average_pgs_variance_by_group(
     plt.figure(figsize=(10, 6))
 
     # Calculate average variance for each group
-    groups = sorted(pgs_variance.keys())
+    sorted_groups = sorted(pgs_variance.keys())
     avg_variances = []
     std_variances = []
 
-    for group in groups:
+    for group in sorted_groups:
         # Get all variances for this group
         variances = [
             pgs_variance[group][pgs]["variance"] for pgs in pgs_variance[group]
@@ -659,7 +706,7 @@ def plot_average_pgs_variance_by_group(
         std_variances.append(np.std(variances))
 
     # Create bar plot with optional error bars
-    create_bar_plot(groups, avg_variances, show_error_bars, std_variances)
+    create_bar_plot(sorted_groups, avg_variances, show_error_bars, std_variances)
 
     # Set up labels and title
     plt.xlabel("Ancestry Group")
@@ -808,6 +855,10 @@ def visualize_analysis(
 
     for group in ancestry_groups:
         plots[f"{group}_distribution"] = plot_distribution_by_pgs(
+            standardized_scores, group, output_dir, trait_name
+        )
+
+        plots[f"{group}_standardized"] = plot_standardized_distribution_by_pgs(
             standardized_scores, group, output_dir, trait_name
         )
 

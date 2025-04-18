@@ -87,7 +87,7 @@ def calculate_summary_statistics(scores_df):
     Returns:
         dict: Dictionary with summary statistics
     """
-    ancestry_groups = list(scores_df["GROUP"].unique()) + ["ALL"]
+    sorted_groups = sorted(list(scores_df["GROUP"].unique()) + ["ALL"])
     pgs_ids = scores_df["PGS"].unique()
 
     summary_stats = {}
@@ -96,7 +96,7 @@ def calculate_summary_statistics(scores_df):
         if pgs_id not in summary_stats:
             summary_stats[pgs_id] = {}
 
-        for group in ancestry_groups:
+        for group in sorted_groups:
             # Get scores for this PGS and ancestry group
             group_scores = (
                 scores_df[scores_df["PGS"] == pgs_id]
@@ -138,15 +138,12 @@ def standardize_scores(scores_df):
     # Initialize z-score column
     scores_df["z_score"] = np.nan
 
-    # Get unique ancestry groups
-    ancestry_groups = list(scores_df["GROUP"].unique()) + ["ALL"]
-
-    # Ensure ALL is only included once
-    ancestry_groups = list(set(ancestry_groups))
+    # Build deterministic list of groups: ALL first, then sorted ancestry groups
+    sorted_groups = sorted(list(scores_df["GROUP"].unique()) + ["ALL"])
 
     # Standardize within each ancestry group for each PGS
     for pgs_id in scores_df["PGS"].unique():
-        for group in ancestry_groups:
+        for group in sorted_groups:
             # For ALL group, include all scores for this PGS
             if group == "ALL":
                 mask = scores_df["PGS"] == pgs_id
@@ -161,6 +158,8 @@ def standardize_scores(scores_df):
                 scores_df.loc[mask, "z_score"] = (
                     group_scores - group_scores.mean()
                 ) / group_scores.std()
+            else:
+                logger.warning(f"No scores for {pgs_id} in {group}")
 
     logger.info("Standardized scores within ancestry groups")
     return scores_df
@@ -177,13 +176,13 @@ def calculate_correlations(scores_df):
         dict: Dictionary with correlation matrices by ancestry group
     """
     # Get unique ancestry groups
-    ancestry_groups = list(scores_df["GROUP"].unique()) + ["ALL"]
+    sorted_groups = sorted(list(scores_df["GROUP"].unique()) + ["ALL"])
 
     # Calculate correlations for each ancestry group
     correlations = {}
     average_correlations = {}
 
-    for group in ancestry_groups:
+    for group in sorted_groups:
         # Get scores for this ancestry group
         group_data = (
             scores_df if group == "ALL" else scores_df[scores_df["GROUP"] == group]
@@ -252,19 +251,16 @@ def calculate_variance(scores_df):
     Returns:
         dict: Dictionary with variance information by ancestry group and PGS
     """
-    ancestry_groups = list(scores_df["GROUP"].unique()) + ["ALL"]
-
-    # Ensure ALL is only included once
-    ancestry_groups = list(set(ancestry_groups))
+    sorted_groups = sorted(list(scores_df["GROUP"].unique()) + ["ALL"])
 
     # Initialize result dictionaries
-    individual_variance_results = {}
+    individual_variance = {}
     pgs_variance = {}
 
     # Dictionaries to map variances back to scores_df
     individual_variance_map = {}  # Maps (IID, GROUP) to individual variance
 
-    for group in ancestry_groups:
+    for group in sorted_groups:
         # Get scores for this ancestry group
         group_data = (
             scores_df if group == "ALL" else scores_df[scores_df["GROUP"] == group]
@@ -290,7 +286,7 @@ def calculate_variance(scores_df):
             individual_variance_map[(iid, group)] = variance
 
         # Calculate summary statistics for this group
-        individual_variance_results[group] = {
+        individual_variance[group] = {
             "average_variance": float(individual_variances.mean()),
             "std_variance": float(individual_variances.std()),
             "max_variance": float(individual_variances.max()),
@@ -322,10 +318,10 @@ def calculate_variance(scores_df):
     )
 
     logger.info(
-        f"Calculated z-score variances for {len(individual_variance_results)} ancestry groups"
+        f"Calculated z-score variances for {len(individual_variance)} ancestry groups"
     )
     return {
-        "individual_variance": individual_variance_results,
+        "individual_variance": individual_variance,
         "pgs_variance": pgs_variance,
     }
 
@@ -371,9 +367,14 @@ def analyze_scores(trait_id=None, scores_file=None, data_dir=None, output_dir=No
                 "aggregated_scores.txt.gz",
             )
 
+        else:
+            logger.error("Could not find scores file")
+            return {"success": False, "error": "Scores file not found"}
+
         if not os.path.exists(scores_file):
             logger.error("Could not find scores file")
             return {"success": False, "error": "Scores file not found"}
+
     # Load ancestry data
     ancestry_df = load_ancestry_data(data_dir)
 
@@ -407,13 +408,7 @@ def analyze_scores(trait_id=None, scores_file=None, data_dir=None, output_dir=No
     results["pgs_variance"] = variance_results["pgs_variance"]
 
     # Save results to JSON files
-    for key in [
-        "summary_statistics",
-        "correlations",
-        "average_correlations",
-        "individual_variance",
-        "pgs_variance",
-    ]:
+    for key in results.keys():
         output_file = os.path.join(output_dir, f"{key}.json")
         with open(output_file, "w") as f:
             json.dump(results[key], f, indent=2)

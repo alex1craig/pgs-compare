@@ -5,15 +5,18 @@ Main module for the PGS Compare package.
 import os
 import logging
 
+# If no handlers exist on the root logger, configure default logging for library use
+if not logging.getLogger().hasHandlers():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
 from pgs_compare.download import setup_environment
 from pgs_compare.calculate import run_pgs_calculation
 from pgs_compare.analyze import analyze_scores
 from pgs_compare.visualize import visualize_analysis
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 
