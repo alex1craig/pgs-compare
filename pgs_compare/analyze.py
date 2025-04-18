@@ -54,6 +54,7 @@ def load_scores(scores_file, ancestry_df=None):
         return pd.DataFrame()
 
     scores_df = pd.read_csv(scores_file, sep="\t")
+    scores_df["SUM"] = scores_df["SUM"].round(6)
     logger.info(f"Loaded {len(scores_df)} score entries")
 
     # Ensure we have ancestry information
