@@ -38,7 +38,8 @@ def setup_plot(title, xlabel, ylabel, add_zero_line=False, trait_name=None):
 
     if add_zero_line:
         plt.axvline(x=0, linestyle="--", color="black", alpha=0.5)
-        plt.grid(alpha=0.3)
+    # Always add grid for all plots
+    plt.grid(alpha=0.3)
 
     plt.tight_layout()
 
@@ -115,7 +116,6 @@ def create_bar_plot(
             capsize=5,
             color="black",
         )
-
     return bars
 
 
