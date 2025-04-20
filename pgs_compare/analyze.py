@@ -54,7 +54,7 @@ def load_scores(scores_file, ancestry_df=None):
         return pd.DataFrame()
 
     scores_df = pd.read_csv(scores_file, sep="\t")
-    scores_df["SUM"] = scores_df["SUM"].round(6)
+    scores_df["SUM"] = scores_df["SUM"].round(8)
     logger.info(f"Loaded {len(scores_df)} score entries")
 
     # Ensure we have ancestry information
@@ -140,17 +140,14 @@ def standardize_scores(scores_df):
     scores_df["z_score"] = np.nan
 
     # Build deterministic list of groups: ALL first, then sorted ancestry groups
-    sorted_groups = sorted(list(scores_df["GROUP"].unique()) + ["ALL"])
+    # Important: ALL is not included
+    sorted_groups = sorted(list(scores_df["GROUP"].unique()))
 
     # Standardize within each ancestry group for each PGS
     for pgs_id in scores_df["PGS"].unique():
         for group in sorted_groups:
-            # For ALL group, include all scores for this PGS
-            if group == "ALL":
-                mask = scores_df["PGS"] == pgs_id
-            else:
-                # Create mask for this PGS and specific ancestry group
-                mask = (scores_df["PGS"] == pgs_id) & (scores_df["GROUP"] == group)
+            # Create mask for this PGS and specific ancestry group
+            mask = (scores_df["PGS"] == pgs_id) & (scores_df["GROUP"] == group)
 
             group_scores = scores_df.loc[mask, "SUM"]
 
