@@ -7,6 +7,7 @@ import logging
 import json
 import pandas as pd
 import numpy as np
+from scipy import stats
 
 logger = logging.getLogger(__name__)
 
@@ -232,6 +233,70 @@ def calculate_correlations(scores_df):
     return {"correlations": correlations, "average_correlations": average_correlations}
 
 
+def calculate_levene_test(variance_by_group):
+    """
+    Perform Levene's test for equal variances across ancestry groups.
+
+    Args:
+        variance_by_group (dict): Dictionary mapping group names to arrays of individual variances
+
+    Returns:
+        dict: Dictionary with Levene's test results including statistic, p-value, and interpretation
+    """
+    levene_test_results = {}
+
+    if len(variance_by_group) >= 2:
+        try:
+            # Prepare data for Levene's test
+            variance_groups = [
+                variances
+                for variances in variance_by_group.values()
+                if len(variances) > 0
+            ]
+            group_names = [
+                group
+                for group, variances in variance_by_group.items()
+                if len(variances) > 0
+            ]
+
+            if len(variance_groups) >= 2:
+                # Perform Levene's test (using median as center)
+                levene_statistic, levene_p_value = stats.levene(
+                    *variance_groups, center="median"
+                )
+
+                levene_test_results = {
+                    "statistic": float(levene_statistic),
+                    "p_value": float(levene_p_value),
+                    "groups_tested": group_names,
+                }
+
+                logger.info(f"Levene's test p-value: {levene_p_value:.4f}")
+            else:
+                logger.warning("Insufficient groups with data for Levene's test")
+                levene_test_results = {
+                    "statistic": None,
+                    "p_value": None,
+                    "groups_tested": [],
+                }
+        except Exception as e:
+            logger.error(f"Error performing Levene's test: {e}")
+            levene_test_results = {
+                "statistic": None,
+                "p_value": None,
+                "groups_tested": [],
+            }
+    else:
+        logger.warning("Insufficient ancestry groups for Levene's test")
+        levene_test_results = {
+            "statistic": None,
+            "p_value": None,
+            "groups_tested": [],
+        }
+
+    return levene_test_results
+
+
 def calculate_variance(scores_df):
     """
     Calculate variance of z-scores for each individual across PGS studies,
@@ -243,11 +308,15 @@ def calculate_variance(scores_df):
     Also calculates PGS variance - the variance of each PGS's predictions from the
     "true" z-score (average of all PGS for each individual).
 
+    Additionally performs Levene's test to test for statistically significant
+    differences in variance between ancestry groups.
+
     Args:
         scores_df (pandas.DataFrame): DataFrame with scores and ancestry information
 
     Returns:
-        dict: Dictionary with variance information by ancestry group and PGS
+        dict: Dictionary with variance information by ancestry group and PGS,
+              including Levene's test results
     """
     sorted_groups = sorted(list(scores_df["GROUP"].unique()) + ["ALL"])
 
@@ -257,6 +326,9 @@ def calculate_variance(scores_df):
 
     # Dictionaries to map variances back to scores_df
     individual_variance_map = {}  # Maps (IID, GROUP) to individual variance
+
+    # Dictionary to collect individual variances for Levene's test
+    variance_by_group = {}
 
     for group in sorted_groups:
         # Get scores for this ancestry group
@@ -278,6 +350,10 @@ def calculate_variance(scores_df):
 
         # Calculate variance for each individual across all PGS
         individual_variances = pivot_data.var(axis=1)
+
+        # Store individual variances for Levene's test (excluding ALL group)
+        if group != "ALL":
+            variance_by_group[group] = individual_variances.dropna().values
 
         # Store mapping of each individual's variance
         for iid, variance in individual_variances.items():
@@ -309,6 +385,9 @@ def calculate_variance(scores_df):
                 "count": len(squared_diffs),
             }
 
+    # Perform Levene's test for equal variances across ancestry groups
+    levene_test_results = calculate_levene_test(variance_by_group)
+
     # Add individual variance column
     scores_df["individual_variance"] = scores_df.apply(
         lambda row: individual_variance_map.get((row["IID"], row["GROUP"]), np.nan),
@@ -321,6 +400,7 @@ def calculate_variance(scores_df):
     return {
         "individual_variance": individual_variance,
         "pgs_variance": pgs_variance,
+        "levene_test": levene_test_results,
     }
 
 
@@ -404,6 +484,7 @@ def analyze_scores(trait_id=None, scores_file=None, data_dir=None, output_dir=No
     variance_results = calculate_variance(scores_df)
     results["individual_variance"] = variance_results["individual_variance"]
     results["pgs_variance"] = variance_results["pgs_variance"]
+    results["levene_test"] = variance_results["levene_test"]
 
     # Save results to JSON files
     for key in results.keys():

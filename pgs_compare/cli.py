@@ -84,6 +84,11 @@ def setup_parser():
         action="store_true",
         help="Show error bars on plots (default: False)",
     )
+    visualize_parser.add_argument(
+        "--show-p-values",
+        action="store_true",
+        help="Show Levene's test p-values in variance plots (default: False)",
+    )
 
     # Pipeline command
     pipeline_parser = subparsers.add_parser(
@@ -116,6 +121,11 @@ def setup_parser():
         "--show-error-bars",
         action="store_true",
         help="Show error bars on plots (default: False)",
+    )
+    pipeline_parser.add_argument(
+        "--show-p-values",
+        action="store_true",
+        help="Show Levene's test p-values in variance plots (default: False)",
     )
     pipeline_parser.add_argument(
         "--pgs-ids",
@@ -202,7 +212,9 @@ def main():
 
     elif args.command == "visualize":
         result = pgs_compare.visualize(
-            trait_id=args.trait_id, show_error_bars=args.show_error_bars
+            trait_id=args.trait_id,
+            show_error_bars=args.show_error_bars,
+            show_p_values=args.show_p_values,
         )
 
         if not result["success"]:
@@ -224,6 +236,7 @@ def main():
             run_ancestry=args.run_ancestry,
             visualize=not args.skip_visualize,
             show_error_bars=args.show_error_bars,
+            show_p_values=args.show_p_values,
             pgs_ids=args.pgs_ids,
         )
 

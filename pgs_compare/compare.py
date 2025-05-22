@@ -161,7 +161,13 @@ class PGSCompare:
             output_dir=output_dir,
         )
 
-    def visualize(self, trait_id=None, analysis_results=None, show_error_bars=False):
+    def visualize(
+        self,
+        trait_id=None,
+        analysis_results=None,
+        show_error_bars=False,
+        show_p_values=True,
+    ):
         """
         Visualize PGS analysis results.
 
@@ -170,6 +176,7 @@ class PGSCompare:
             analysis_results (dict, optional): Analysis results from analyze().
                 If None, will try to load from the standard location based on trait_id.
             show_error_bars (bool): Whether to show error bars for all plots. Default is False.
+            show_p_values (bool): Whether to show Levene's test p-values in variance plots. Default is True.
 
         Returns:
             dict: Dictionary with paths to the generated plots
@@ -187,6 +194,7 @@ class PGSCompare:
             analysis_dir=analysis_dir,
             output_dir=output_dir,
             show_error_bars=show_error_bars,
+            show_p_values=show_p_values,
         )
 
     def run_pipeline(
@@ -197,6 +205,7 @@ class PGSCompare:
         run_ancestry=False,
         visualize=True,
         show_error_bars=False,
+        show_p_values=True,
         pgs_ids=None,
     ):
         """
@@ -209,6 +218,7 @@ class PGSCompare:
             run_ancestry (bool): Whether to run ancestry analysis
             visualize (bool): Whether to generate visualization plots
             show_error_bars (bool): Whether to show error bars for all plots. Default is False.
+            show_p_values (bool): Whether to show Levene's test p-values in variance plots. Default is True.
             pgs_ids (str, optional): Custom comma-separated string of PGS IDs to calculate.
                 If provided, will use these instead of fetching based on trait_id.
 
@@ -250,6 +260,7 @@ class PGSCompare:
                 trait_id=trait_id,
                 analysis_results=analysis_results,
                 show_error_bars=show_error_bars,
+                show_p_values=show_p_values,
             )
 
             return {

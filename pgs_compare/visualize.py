@@ -471,7 +471,12 @@ def plot_average_correlations(
 
 
 def plot_variance_by_ancestry(
-    variance_results, output_dir=None, trait_name=None, show_error_bars=False
+    variance_results,
+    output_dir=None,
+    trait_name=None,
+    show_error_bars=False,
+    show_p_values=False,
+    levene_test_results=None,
 ):
     """
     Plot average variance of z-scores across PGS studies for each ancestry group.
@@ -483,6 +488,8 @@ def plot_variance_by_ancestry(
         output_dir (str, optional): Directory to save the plot
         trait_name (str, optional): Trait name to add to title
         show_error_bars (bool): Whether to show error bars. Default is False.
+        show_p_values (bool): Whether to show Levene's test p-values in legend. Default is False.
+        levene_test_results (dict, optional): Levene's test results to display
 
     Returns:
         str or None: Path to the saved plot, or None if no plot was created
@@ -514,6 +521,20 @@ def plot_variance_by_ancestry(
     title = "Average Variance of Z-Scores Across PGS Studies by Ancestry Group"
     if trait_name:
         title += f" ({trait_name})"
+
+    # Add Levene's test p-value to title if requested and available
+    if (
+        show_p_values
+        and levene_test_results
+        and levene_test_results.get("p_value") is not None
+    ):
+        p_value = levene_test_results["p_value"]
+        significance = (
+            "***"
+            if p_value < 0.001
+            else "**" if p_value < 0.01 else "*" if p_value < 0.05 else "ns"
+        )
+        title += f"\n(Levene's test p={p_value:.4f} {significance})"
 
     plt.title(title)
     plt.grid(axis="y", alpha=0.3)
@@ -725,7 +746,11 @@ def plot_average_pgs_variance_by_group(
 
 
 def visualize_analysis(
-    analysis_results=None, analysis_dir=None, output_dir=None, show_error_bars=False
+    analysis_results=None,
+    analysis_dir=None,
+    output_dir=None,
+    show_error_bars=False,
+    show_p_values=False,
 ):
     """
     Visualize PGS analysis results.
@@ -737,6 +762,7 @@ def visualize_analysis(
         output_dir (str, optional): Directory to save the plots.
                                  If None, will use analysis_dir/plots.
         show_error_bars (bool): Whether to show error bars for all plots. Default is False.
+        show_p_values (bool): Whether to show Levene's test p-values in variance plots. Default is False.
 
     Returns:
         dict: Dictionary with paths to the generated plots
@@ -771,6 +797,10 @@ def visualize_analysis(
             with open(os.path.join(analysis_dir, "pgs_variance.json"), "r") as f:
                 pgs_variance = json.load(f)
 
+            # Load Levene's test results
+            with open(os.path.join(analysis_dir, "levene_test.json"), "r") as f:
+                levene_test = json.load(f)
+
             # Load standardized scores
             standardized_scores = pd.read_csv(
                 os.path.join(analysis_dir, "standardized_scores.csv")
@@ -782,6 +812,7 @@ def visualize_analysis(
                 "average_correlations": average_correlations,
                 "individual_variance": individual_variance,
                 "pgs_variance": pgs_variance,
+                "levene_test": levene_test,
                 "trait_id": (
                     os.path.basename(os.path.dirname(analysis_dir))
                     if os.path.dirname(analysis_dir)
@@ -880,6 +911,8 @@ def visualize_analysis(
         output_dir,
         trait_name,
         show_error_bars=show_error_bars,
+        show_p_values=show_p_values,
+        levene_test_results=analysis_results.get("levene_test", {}),
     )
 
     # 4. PGS variance plot
