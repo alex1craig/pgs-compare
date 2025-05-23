@@ -545,7 +545,12 @@ def plot_variance_by_ancestry(
 
 
 def plot_pgs_variance(
-    pgs_variance, output_dir=None, trait_name=None, show_error_bars=False
+    pgs_variance,
+    output_dir=None,
+    trait_name=None,
+    show_error_bars=False,
+    show_p_values=False,
+    pgs_levene_tests=None,
 ):
     """
     Plot variance of each PGS from the "true" z-score (average across all PGS) by ancestry group.
@@ -557,6 +562,8 @@ def plot_pgs_variance(
         output_dir (str, optional): Directory to save the plot
         trait_name (str, optional): Trait name to add to title
         show_error_bars (bool): Whether to show error bars. Default is False.
+        show_p_values (bool): Whether to show Levene's test p-values. Default is False.
+        pgs_levene_tests (dict, optional): PGS-specific Levene's test results
 
     Returns:
         str or None: Path to the saved plot, or None if no plot was created
@@ -607,9 +614,29 @@ def plot_pgs_variance(
         title += f" ({trait_name})"
     plt.title(title)
 
+    # Prepare x-axis labels with p-values if requested
+    if show_p_values and pgs_levene_tests:
+        x_labels = []
+        for pgs in all_pgs:
+            label = pgs
+            if (
+                pgs in pgs_levene_tests
+                and pgs_levene_tests[pgs].get("p_value") is not None
+            ):
+                p_value = pgs_levene_tests[pgs]["p_value"]
+                significance = (
+                    "***"
+                    if p_value < 0.001
+                    else "**" if p_value < 0.01 else "*" if p_value < 0.05 else "ns"
+                )
+                label += f"\np={p_value:.3f}{significance}"
+            x_labels.append(label)
+    else:
+        x_labels = all_pgs
+
     plt.xticks(
         index + bar_width * (len(sorted_groups) - 1) / 2,
-        all_pgs,
+        x_labels,
         rotation=45,
         ha="right",
     )
@@ -622,7 +649,12 @@ def plot_pgs_variance(
 
 
 def plot_individual_pgs_variance(
-    pgs_variance, output_dir=None, trait_name=None, show_error_bars=False
+    pgs_variance,
+    output_dir=None,
+    trait_name=None,
+    show_error_bars=False,
+    show_p_values=False,
+    pgs_levene_tests=None,
 ):
     """
     Create individual plots for each PGS showing its variance from the consensus
@@ -633,6 +665,8 @@ def plot_individual_pgs_variance(
         output_dir (str, optional): Directory to save the plots
         trait_name (str, optional): Trait name to add to title
         show_error_bars (bool): Whether to show error bars. Default is False.
+        show_p_values (bool): Whether to show Levene's test p-values in titles. Default is False.
+        pgs_levene_tests (dict, optional): PGS-specific Levene's test results
 
     Returns:
         dict: Dictionary mapping PGS IDs to paths of saved plots
@@ -674,8 +708,23 @@ def plot_individual_pgs_variance(
         title = f"Variance of {pgs} from Consensus Z-Score by Ancestry Group"
         if trait_name:
             title += f" ({trait_name})"
-        plt.title(title)
 
+        # Add Levene's test p-value to title if requested and available
+        if (
+            show_p_values
+            and pgs_levene_tests
+            and pgs in pgs_levene_tests
+            and pgs_levene_tests[pgs].get("p_value") is not None
+        ):
+            p_value = pgs_levene_tests[pgs]["p_value"]
+            significance = (
+                "***"
+                if p_value < 0.001
+                else "**" if p_value < 0.01 else "*" if p_value < 0.05 else "ns"
+            )
+            title += f"\n(Levene's test p={p_value:.4f} {significance})"
+
+        plt.title(title)
         plt.grid(axis="y", alpha=0.3)
         plt.tight_layout()
 
@@ -801,6 +850,18 @@ def visualize_analysis(
             with open(os.path.join(analysis_dir, "levene_test.json"), "r") as f:
                 levene_test = json.load(f)
 
+            # Try to load PGS Levene's test results (might not exist in older analysis results)
+            pgs_levene_tests = {}
+            try:
+                with open(
+                    os.path.join(analysis_dir, "pgs_levene_tests.json"), "r"
+                ) as f:
+                    pgs_levene_tests = json.load(f)
+            except FileNotFoundError:
+                logger.warning(
+                    "PGS Levene's test results not found. Individual PGS variance plots will not show p-values."
+                )
+
             # Load standardized scores
             standardized_scores = pd.read_csv(
                 os.path.join(analysis_dir, "standardized_scores.csv")
@@ -813,6 +874,7 @@ def visualize_analysis(
                 "individual_variance": individual_variance,
                 "pgs_variance": pgs_variance,
                 "levene_test": levene_test,
+                "pgs_levene_tests": pgs_levene_tests,
                 "trait_id": (
                     os.path.basename(os.path.dirname(analysis_dir))
                     if os.path.dirname(analysis_dir)
@@ -921,6 +983,8 @@ def visualize_analysis(
         output_dir,
         trait_name,
         show_error_bars=show_error_bars,
+        show_p_values=show_p_values,
+        pgs_levene_tests=analysis_results.get("pgs_levene_tests", {}),
     )
 
     # 5. Individual PGS variance plots
@@ -929,6 +993,8 @@ def visualize_analysis(
         output_dir,
         trait_name,
         show_error_bars=show_error_bars,
+        show_p_values=show_p_values,
+        pgs_levene_tests=analysis_results.get("pgs_levene_tests", {}),
     )
     plots["individual_pgs_variance"] = individual_plots
 
