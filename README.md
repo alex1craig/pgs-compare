@@ -1,13 +1,13 @@
 # PGS-Compare
 
-PGS-Compare is a Python package for analyzing and comparing Polygenic Scores (PGS) across ancestry groups. It uses the PGS Catalog and 1000 Genomes data to help researchers evaluate the stability of PGS scores across different ancestry groups.
+PGS-Compare is a Python package for analyzing and comparing Polygenic Scores (PGS) across ancestry groups. It uses the PGS Catalog and 1000 Genomes data to help researchers evaluate the stability of PGS across different ancestry groups.
 
 ## Features
 
 - Download necessary data from the 1000 Genomes project and reference panels
-- Fetch and calculate PGS scores for specific traits using the PGS Catalog
-- Analyze PGS score distributions across different ancestry groups
-- Compare consistency of PGS scores from different studies
+- Fetch and calculate PGS for specific traits using the PGS Catalog
+- Analyze PGS distributions across different ancestry groups
+- Compare consistency of PGS from different studies
 - Visualize results with publication-ready plots
 - Assess stability of PGS predictions across and within ancestry groups
 
@@ -50,7 +50,7 @@ pgs = PGSCompare()
 results = pgs.run_pipeline("MONDO_0005180")
 
 # The results include:
-# - Calculation results (PGS scores)
+# - Calculation results (PGS)
 # - Analysis results (summary statistics, correlations, etc.)
 # - Visualization results (paths to plots)
 ```
@@ -140,7 +140,7 @@ Returns:
 pgs.analyze(trait_id=None, scores_file=None)
 ```
 
-Analyze PGS scores across ancestry groups.
+Analyze PGS across ancestry groups.
 
 Parameters:
 
@@ -209,7 +209,7 @@ You can find trait IDs by searching the [PGS Catalog](https://www.pgscatalog.org
 
 The analysis results include:
 
-1. **Summary Statistics**: Basic statistics of PGS scores by ancestry group and PGS study
+1. **Summary Statistics**: Basic statistics of PGS by ancestry group and PGS study
 2. **Correlations**: Correlation matrices showing how different PGS studies relate to each other
 3. **Individual Variance**: Measurement of how consistently different PGS studies rank individuals within each ancestry group
 4. **PGS Variance**: Measurement of how each PGS deviates from the consensus prediction across individuals

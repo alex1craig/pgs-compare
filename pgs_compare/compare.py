@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class PGSCompare:
     """
-    Main class for comparing PGS scores across ancestry groups.
+    Main class for comparing PGS across ancestry groups.
     """
 
     def __init__(self, data_dir=None, download_data=True):
@@ -138,7 +138,7 @@ class PGSCompare:
 
     def analyze(self, trait_id=None, scores_file=None):
         """
-        Analyze PGS scores across ancestry groups.
+        Analyze PGS across ancestry groups.
 
         Args:
             trait_id (str, optional): Trait ID. Used for organizing output if provided.

@@ -1,5 +1,5 @@
 """
-Module for analyzing PGS scores across ancestry groups.
+Module for analyzing PGS across ancestry groups.
 """
 
 import os
@@ -40,7 +40,7 @@ def load_ancestry_data(data_dir=None):
 
 def load_scores(scores_file, ancestry_df=None):
     """
-    Load PGS scores and merge with ancestry information.
+    Load PGS and merge with ancestry information.
 
     Args:
         scores_file (str): Path to the scores file (aggregated_scores.txt.gz)
@@ -81,7 +81,7 @@ def load_scores(scores_file, ancestry_df=None):
 
 def calculate_summary_statistics(scores_df):
     """
-    Calculate summary statistics for PGS scores by ancestry group and PGS study.
+    Calculate summary statistics for PGS by ancestry group and PGS study.
 
     Args:
         scores_df (pandas.DataFrame): DataFrame with scores and ancestry information
@@ -436,7 +436,7 @@ def calculate_variance(scores_df):
 
 def analyze_scores(trait_id=None, scores_file=None, data_dir=None, output_dir=None):
     """
-    Analyze PGS scores across ancestry groups.
+    Analyze PGS across ancestry groups.
 
     Args:
         trait_id (str, optional): Trait ID. Used for organizing output if provided.

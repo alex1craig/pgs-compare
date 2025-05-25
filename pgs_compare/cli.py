@@ -67,7 +67,7 @@ def setup_parser():
 
     # Analyze command
     analyze_parser = subparsers.add_parser(
-        "analyze", help="Analyze PGS scores across ancestry groups"
+        "analyze", help="Analyze PGS across ancestry groups"
     )
     analyze_parser.add_argument("--trait-id", help="Trait ID for organizing output")
     analyze_parser.add_argument(

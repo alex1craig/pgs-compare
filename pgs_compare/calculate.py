@@ -23,7 +23,7 @@ def fetch_pgs_ids(trait_id, include_child_pgs=True, max_variants=None):
         trait_id (str): Trait ID (e.g., "MONDO_0005180" for Parkinson's disease)
         include_child_pgs (bool): Whether to include child-associated PGS IDs
         max_variants (int, optional): Maximum number of variants for PGS to include.
-                                     If None, all PGS scores are included.
+                                     If None, all PGS are included.
 
     Returns:
         tuple: (list of PGS IDs, trait label, dict of trait response)

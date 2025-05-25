@@ -207,7 +207,7 @@ def plot_distribution_by_ancestry(scores_df, pgs_id, output_dir=None, trait_name
 
     # Set up plot
     setup_plot(
-        f"Distribution of PGS Scores by Ancestry for {pgs_id}",
+        f"Distribution of PGS by Ancestry for {pgs_id}",
         "Polygenic Score",
         "Density",
         trait_name=trait_name,
@@ -247,7 +247,7 @@ def plot_distribution_by_pgs(scores_df, group, output_dir=None, trait_name=None)
 
     # Set up plot
     setup_plot(
-        f"Distribution of PGS Scores in {group}",
+        f"Distribution of PGS in {group}",
         "Polygenic Score",
         "Density",
         trait_name=trait_name,
@@ -292,7 +292,7 @@ def plot_standardized_distribution_by_ancestry(
 
     # Set up plot
     setup_plot(
-        f"Standardized PGS Scores for {pgs_id}",
+        f"Standardized PGS for {pgs_id}",
         "Z-Score",
         "Density",
         add_zero_line=True,
@@ -336,7 +336,7 @@ def plot_standardized_distribution_by_pgs(
 
     # Set up plot formatting
     setup_plot(
-        f"Standardized Distribution of PGS Scores in {group}",
+        f"Standardized Distribution of PGS in {group}",
         "Z-Score",
         "Density",
         add_zero_line=True,
@@ -390,7 +390,7 @@ def plot_correlation_matrix(scores_df, group, output_dir=None, trait_name=None):
         cbar.set_label("Pearson Correlation")
 
         # Add labels and ticks
-        title = f"Correlation Matrix of PGS Scores for {group} Ancestry"
+        title = f"Correlation Matrix of PGS for {group} Ancestry"
         if trait_name:
             title += f" ({trait_name})"
 
@@ -457,7 +457,7 @@ def plot_average_correlations(
     plt.xlabel("Ancestry Group")
     plt.ylabel("Average Correlation")
 
-    title = "Average Correlation of PGS Scores by Ancestry Group"
+    title = "Average Correlation of PGS by Ancestry Group"
     if trait_name:
         title += f" ({trait_name})"
 
