@@ -370,6 +370,7 @@ def calculate_variance(scores_df):
         # Calculate summary statistics for this group
         individual_variance[group] = {
             "average_variance": float(individual_variances.mean()),
+            "median_variance": float(individual_variances.median()),
             "std_variance": float(individual_variances.std()),
             "max_variance": float(individual_variances.max()),
             "min_variance": float(individual_variances.min()),
