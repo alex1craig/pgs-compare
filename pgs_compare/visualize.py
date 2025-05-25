@@ -516,9 +516,9 @@ def plot_variance_by_ancestry(
 
     # Set up plot
     plt.xlabel("Ancestry Group")
-    plt.ylabel("Average Variance of Z-Scores")
+    plt.ylabel("Average Individual Variance of Z-Scores")
 
-    title = "Average Variance of Z-Scores Across PGS Studies by Ancestry Group"
+    title = "Average Individual Variance of Z-Scores by Ancestry Group"
     if trait_name:
         title += f" ({trait_name})"
 
@@ -541,7 +541,11 @@ def plot_variance_by_ancestry(
     plt.tight_layout()
 
     # Save plot
-    return save_plot(output_dir, "variance", "average_z_score_variance_by_ancestry.png")
+    return save_plot(
+        output_dir,
+        "variance",
+        "average_individual_z_score_variance_by_ancestry.png",
+    )
 
 
 def plot_pgs_variance(
@@ -732,7 +736,7 @@ def plot_individual_pgs_variance(
         if output_dir:
             plot_path = save_plot(
                 output_dir,
-                os.path.join("variance", "individual_pgs"),
+                os.path.join("variance", "pgs"),
                 f"{pgs}_variance.png",
             )
             plot_paths[pgs] = plot_path
